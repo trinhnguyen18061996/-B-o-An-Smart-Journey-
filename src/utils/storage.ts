@@ -103,12 +103,25 @@ export function loadInitialState(): AppState {
       const loadedName = parsed.profile.name === 'Bé Bắp' || !parsed.profile.name ? 'bé Gạo' : parsed.profile.name;
       const validGradeLevels = ['grade_1', 'grade_2', 'grade_3', 'grade_4', 'grade_5'];
       const loadedGrade = validGradeLevels.includes(parsed.profile.gradeLevel) ? parsed.profile.gradeLevel : 'grade_1';
+      
+      // Auto-migrate to official Huỳnh Ngọc Huệ timetable if user had old template or missing
+      const hasOldGenericTimetable = !parsed.settings?.schoolTimetable ||
+        !Array.isArray(parsed.settings.schoolTimetable) ||
+        parsed.settings.schoolTimetable.some((d: any) =>
+          d.morningPeriods?.some((p: any) => p.subjectName === 'Chào cờ' && p.time === '07:30 - 08:05')
+        ) ||
+        !parsed.settings.schoolTimetable.some((d: any) =>
+          d.morningPeriods?.some((p: any) => p.subjectName === 'CC - HĐTN')
+        );
+
+      const activeTimetable = hasOldGenericTimetable ? DEFAULT_SCHOOL_TIMETABLE : parsed.settings.schoolTimetable;
+
       return {
         profile: { ...DEFAULT_PROFILE, ...parsed.profile, name: loadedName, gradeLevel: loadedGrade },
         settings: {
           ...DEFAULT_SETTINGS,
           ...parsed.settings,
-          schoolTimetable: parsed.settings?.schoolTimetable || DEFAULT_SCHOOL_TIMETABLE,
+          schoolTimetable: activeTimetable,
         },
       };
     }
