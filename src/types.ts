@@ -1,6 +1,6 @@
 export type Language = 'vi' | 'en';
 
-export type GradeLevel = 'preschool' | 'grade_1' | 'grade_2' | 'grade_3';
+export type GradeLevel = 'grade_1' | 'grade_2' | 'grade_3' | 'grade_4' | 'grade_5';
 
 export type Subject = 'vietnamese' | 'math' | 'english';
 
@@ -55,6 +55,23 @@ export interface ScheduleDay {
   targetGoal: number; // number of exercises
 }
 
+export interface SchoolPeriod {
+  periodNumber: number; // 1, 2, 3, 4, 5
+  session: 'morning' | 'afternoon'; // 'morning' | 'afternoon'
+  time?: string; // e.g. "07:30 - 08:05"
+  subjectName: string; // "Chào cờ", "Tiếng Việt", "Toán", "Tiếng Anh", v.v.
+  note?: string; // Ghi chú: Mang màu vẽ, mang giày thể thao...
+}
+
+export interface SchoolDaySchedule {
+  dayIndex: number; // 1 = Thứ Hai, 2 = Thứ Ba, 3 = Thứ Tư, 4 = Thứ Năm, 5 = Thứ Sáu, 6 = Thứ Bảy, 0 = Chủ Nhật
+  dayNameVi: string;
+  dayNameEn: string;
+  morningPeriods: SchoolPeriod[];
+  afternoonPeriods: SchoolPeriod[];
+  notes?: string;
+}
+
 export interface ParentSettings {
   pinCode: string;
   dailyTimeLimitMinutes: number; // 0 = unlimited, 15, 30, 45, 60
@@ -65,6 +82,7 @@ export interface ParentSettings {
   reminderTime: string; // e.g. "19:30"
   reminderEnabled: boolean;
   schedule: ScheduleDay[];
+  schoolTimetable?: SchoolDaySchedule[];
 }
 
 export interface ChildProfile {

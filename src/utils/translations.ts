@@ -17,10 +17,11 @@ export const translations = {
 
     // Grade levels
     gradeLevelLabel: 'Cấp Lớp Học Hiện Tại:',
-    gradePreschool: '🌱 Mầm Non / Tiền Tiểu Học',
     grade1: '⭐ Lớp 1 (6 - 7 tuổi)',
     grade2: '🚀 Lớp 2 (7 - 8 tuổi)',
     grade3: '🏆 Lớp 3 (8 - 9 tuổi)',
+    grade4: '💡 Lớp 4 (9 - 10 tuổi)',
+    grade5: '🎓 Lớp 5 (10 - 11 tuổi)',
 
     // Schedule banner
     scheduleTitle: 'Thời Khóa Biểu Hôm Nay',
@@ -191,10 +192,11 @@ export const translations = {
 
     // Grade levels
     gradeLevelLabel: 'Current Grade Curriculum:',
-    gradePreschool: '🌱 Kindergarten / Preschool',
     grade1: '⭐ Grade 1 (Age 6-7)',
     grade2: '🚀 Grade 2 (Age 7-8)',
     grade3: '🏆 Grade 3 (Age 8-9)',
+    grade4: '💡 Grade 4 (Age 9-10)',
+    grade5: '🎓 Grade 5 (Age 10-11)',
 
     // Schedule banner
     scheduleTitle: "Today's Study Schedule",

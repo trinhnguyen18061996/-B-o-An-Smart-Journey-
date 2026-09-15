@@ -1,5 +1,6 @@
 import { AppState, ChildProfile, ParentSettings, ScheduleDay, StudySession } from '../types';
 import { INITIAL_BADGES, INITIAL_STICKERS } from '../data/rewards';
+import { DEFAULT_SCHOOL_TIMETABLE } from './timetableHelper';
 
 const STORAGE_KEY = 'be_vui_hoc_lop1_state_v1';
 
@@ -57,8 +58,9 @@ function generateSeedHistory(): StudySession[] {
 }
 
 const DEFAULT_PROFILE: ChildProfile = {
-  name: 'Bé Bắp',
+  name: 'bé Gạo',
   avatar: '🐰',
+  customAvatarUrl: '/og-image.jpg',
   gradeLevel: 'grade_1',
   stars: 18,
   currentStreak: 4,
@@ -80,6 +82,7 @@ const DEFAULT_SETTINGS: ParentSettings = {
   reminderTime: '19:30',
   reminderEnabled: true,
   schedule: DEFAULT_SCHEDULE,
+  schoolTimetable: DEFAULT_SCHOOL_TIMETABLE,
 };
 
 export function loadInitialState(): AppState {
@@ -97,9 +100,16 @@ export function loadInitialState(): AppState {
         parsed.profile.todayUsageMinutes = 0;
         parsed.profile.lastActiveDate = today;
       }
+      const loadedName = parsed.profile.name === 'Bé Bắp' || !parsed.profile.name ? 'bé Gạo' : parsed.profile.name;
+      const validGradeLevels = ['grade_1', 'grade_2', 'grade_3', 'grade_4', 'grade_5'];
+      const loadedGrade = validGradeLevels.includes(parsed.profile.gradeLevel) ? parsed.profile.gradeLevel : 'grade_1';
       return {
-        profile: { ...DEFAULT_PROFILE, ...parsed.profile },
-        settings: { ...DEFAULT_SETTINGS, ...parsed.settings },
+        profile: { ...DEFAULT_PROFILE, ...parsed.profile, name: loadedName, gradeLevel: loadedGrade },
+        settings: {
+          ...DEFAULT_SETTINGS,
+          ...parsed.settings,
+          schoolTimetable: parsed.settings?.schoolTimetable || DEFAULT_SCHOOL_TIMETABLE,
+        },
       };
     }
   } catch (e) {

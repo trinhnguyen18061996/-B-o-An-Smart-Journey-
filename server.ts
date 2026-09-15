@@ -54,6 +54,9 @@ async function startServer() {
     }
   });
 
+  // Static files in public directory (og-image.jpg, favicon, etc.)
+  app.use(express.static(path.join(process.cwd(), "public")));
+
   // Vite middleware in development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
