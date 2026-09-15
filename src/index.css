@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Nunito', 'Quicksand', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@keyframes bounce-gentle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes float-star {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(6deg); }
+}
+
+.animate-bounce-gentle {
+  animation: bounce-gentle 2s infinite ease-in-out;
+}
+
+.animate-float-star {
+  animation: float-star 3s infinite ease-in-out;
+}

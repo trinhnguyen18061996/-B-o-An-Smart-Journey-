@@ -1,0 +1,71 @@
+import { Badge, Sticker } from '../types';
+
+export const INITIAL_STICKERS: Sticker[] = [
+  { id: 'bunny', nameVi: 'Thỏ Ngọc Nhanh Trí', nameEn: 'Smart Bunny', emoji: '🐰', category: 'animals', requiredStars: 3, unlocked: true },
+  { id: 'kitten', nameVi: 'Mèo Con Chăm Chỉ', nameEn: 'Diligent Kitten', emoji: '🐱', category: 'animals', requiredStars: 8, unlocked: false },
+  { id: 'puppy', nameVi: 'Chú Cún Dũng Cảm', nameEn: 'Brave Puppy', emoji: '🐶', category: 'animals', requiredStars: 15, unlocked: false },
+  { id: 'panda', nameVi: 'Gấu Trúc Vui Vẻ', nameEn: 'Cheerful Panda', emoji: '🐼', category: 'animals', requiredStars: 25, unlocked: false },
+  { id: 'lion', nameVi: 'Sư Tử Tự Tin', nameEn: 'Confident Lion', emoji: '🦁', category: 'animals', requiredStars: 35, unlocked: false },
+  { id: 'dolphin', nameVi: 'Cá Heo Thông Thái', nameEn: 'Wise Dolphin', emoji: '🐬', category: 'animals', requiredStars: 50, unlocked: false },
+  { id: 'unicorn', nameVi: 'Kỳ Lân Cầu Vồng', nameEn: 'Rainbow Unicorn', emoji: '🦄', category: 'fantasy', requiredStars: 65, unlocked: false },
+  { id: 'rocket', nameVi: 'Phi Hành Gia Nhí', nameEn: 'Little Astronaut', emoji: '🚀', category: 'space', requiredStars: 80, unlocked: false },
+  { id: 'dino', nameVi: 'Khủng Long Khám Phá', nameEn: 'Explorer Dino', emoji: '🦖', category: 'animals', requiredStars: 100, unlocked: false },
+  { id: 'star_master', nameVi: 'Thần Đồng Lớp 1', nameEn: 'Grade 1 Prodigy', emoji: '👑', category: 'master', requiredStars: 120, unlocked: false },
+];
+
+export const INITIAL_BADGES: Badge[] = [
+  {
+    id: 'first_step',
+    titleVi: 'Bước Chân Đầu Tiên',
+    titleEn: 'First Step',
+    descVi: 'Hoàn thành bài học đầu tiên',
+    descEn: 'Complete your first lesson',
+    icon: '🌱',
+    unlocked: true,
+  },
+  {
+    id: 'math_starter',
+    titleVi: 'Hiệp Sĩ Toán Học',
+    titleEn: 'Math Knight',
+    descVi: 'Hoàn thành 3 bài toán đạt điểm tuyệt đối',
+    descEn: 'Complete 3 math games with 100% accuracy',
+    icon: '🧮',
+    unlocked: false,
+  },
+  {
+    id: 'rhyme_master',
+    titleVi: 'Vua Ghép Vần',
+    titleEn: 'Rhyme King',
+    descVi: 'Ghép đúng 10 vần tiếng Việt',
+    descEn: 'Build 10 Vietnamese rhymes correctly',
+    icon: '📚',
+    unlocked: false,
+  },
+  {
+    id: 'star_collector',
+    titleVi: 'Nhà Sưu Tập Sao',
+    titleEn: 'Star Collector',
+    descVi: 'Thu thập trên 30 ngôi sao',
+    descEn: 'Collect over 30 stars',
+    icon: '⭐',
+    unlocked: false,
+  },
+  {
+    id: 'consistent_learner',
+    titleVi: 'Ong Vàng Chăm Chỉ',
+    titleEn: 'Busy Bee',
+    descVi: 'Học liên tiếp trong 3 ngày',
+    descEn: 'Maintain a 3-day study streak',
+    icon: '🐝',
+    unlocked: false,
+  },
+  {
+    id: 'perfect_champion',
+    titleVi: 'Quán Quân Toàn Năng',
+    titleEn: 'All-Round Champion',
+    descVi: 'Hoàn thành tất cả các thể loại trò chơi',
+    descEn: 'Master all game modes in both subjects',
+    icon: '🏆',
+    unlocked: false,
+  },
+];
