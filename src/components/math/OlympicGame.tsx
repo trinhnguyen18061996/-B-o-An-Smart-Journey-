@@ -30,11 +30,9 @@ export const OlympicGame: React.FC<OlympicGameProps> = ({
       soundFx.playSuccess(settings.soundEnabled);
       setFeedback('correct');
       setScore((s) => s + 1);
-      speakText('Chính xác! Bé xuất sắc vượt qua câu hỏi Olympic!', 'vi', settings.speechEnabled);
     } else {
       soundFx.playError(settings.soundEnabled);
       setFeedback('wrong');
-      speakText('Bé hãy đọc kỹ lại đề bài nhé!', 'vi', settings.speechEnabled);
     }
   };
 

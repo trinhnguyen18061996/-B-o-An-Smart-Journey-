@@ -53,11 +53,9 @@ export const SubstitutionGame: React.FC<SubstitutionGameProps> = ({
       soundFx.playSuccess(settings.soundEnabled);
       setFeedback('correct');
       setScore((s) => s + 1);
-      speakText(`Chính xác! Đáp án là ${optValue}`, 'vi', settings.speechEnabled);
     } else {
       soundFx.playError(settings.soundEnabled);
       setFeedback('wrong');
-      speakText('Chưa đúng rồi, bé hãy thử lại hoặc bấm Trợ giúp nhé!', 'vi', settings.speechEnabled);
     }
   };
 

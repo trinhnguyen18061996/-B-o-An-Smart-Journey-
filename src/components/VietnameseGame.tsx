@@ -212,10 +212,8 @@ export const VietnameseGame: React.FC<VietnameseGameProps> = ({
       soundFx.playCorrect(settings.soundEnabled);
       soundFx.playStar(settings.soundEnabled);
       setQuizScore((prev) => prev + 1);
-      speakText('Chính xác! Bé làm rất giỏi!', 'vi', settings.speechEnabled);
     } else {
       soundFx.playWrong(settings.soundEnabled);
-      speakText('Chưa đúng rồi, bé hãy xem giải thích nhé!', 'vi', settings.speechEnabled);
     }
   };
 

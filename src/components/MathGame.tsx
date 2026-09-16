@@ -95,7 +95,6 @@ export const MathGame: React.FC<MathGameProps> = ({
       soundFx.playSuccess(settings.soundEnabled);
       setCountingFeedback('correct');
       setCountingScore((prev) => prev + 1);
-      speakText(t.correct, 'vi', settings.speechEnabled);
     } else {
       soundFx.playError(settings.soundEnabled);
       setCountingFeedback('wrong');
@@ -128,7 +127,6 @@ export const MathGame: React.FC<MathGameProps> = ({
       setMathFeedback('correct');
       setMathScore((prev) => prev + 1);
       setCarPositionPercent((prev) => Math.min(prev + 18, 90));
-      speakText(`${currentMath.expression} bằng ${val}`, 'vi', settings.speechEnabled);
     } else {
       soundFx.playError(settings.soundEnabled);
       setMathFeedback('wrong');
@@ -160,8 +158,6 @@ export const MathGame: React.FC<MathGameProps> = ({
       soundFx.playSuccess(settings.soundEnabled);
       setCmpFeedback('correct');
       setCmpScore((prev) => prev + 1);
-      const symText = sym === '>' ? 'lớn hơn' : sym === '<' ? 'bé hơn' : 'bằng';
-      speakText(`${currentCmp.leftText} ${symText} ${currentCmp.rightText}`, 'vi', settings.speechEnabled);
     } else {
       soundFx.playError(settings.soundEnabled);
       setCmpFeedback('wrong');
@@ -192,7 +188,6 @@ export const MathGame: React.FC<MathGameProps> = ({
       soundFx.playSuccess(settings.soundEnabled);
       setShapeFeedback('correct');
       setShapeScore((prev) => prev + 1);
-      speakText(t.correct, 'vi', settings.speechEnabled);
     } else {
       soundFx.playError(settings.soundEnabled);
       setShapeFeedback('wrong');

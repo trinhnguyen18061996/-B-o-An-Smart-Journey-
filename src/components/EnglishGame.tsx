@@ -152,10 +152,8 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({
       soundFx.playCorrect(settings.soundEnabled);
       soundFx.playStar(settings.soundEnabled);
       setQuizScore((prev) => prev + 1);
-      speakText('Great job! That is correct!', 'en', settings.speechEnabled);
     } else {
       soundFx.playWrong(settings.soundEnabled);
-      speakText('Not quite right, check out the explanation!', 'en', settings.speechEnabled);
     }
   };
 

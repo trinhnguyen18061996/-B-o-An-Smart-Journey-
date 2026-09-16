@@ -51,7 +51,6 @@ export const BalancePatternGame: React.FC<BalancePatternGameProps> = ({
       soundFx.playSuccess(settings.soundEnabled);
       setBalFeedback('correct');
       setBalScore((s) => s + 1);
-      speakText(`Chính xác! ${currentBal.explanation}`, 'vi', settings.speechEnabled);
     } else {
       soundFx.playError(settings.soundEnabled);
       setBalFeedback('wrong');
@@ -83,7 +82,6 @@ export const BalancePatternGame: React.FC<BalancePatternGameProps> = ({
       soundFx.playSuccess(settings.soundEnabled);
       setPatFeedback('correct');
       setPatScore((s) => s + 1);
-      speakText(`Đúng rồi! ${currentPat.ruleVi}`, 'vi', settings.speechEnabled);
     } else {
       soundFx.playError(settings.soundEnabled);
       setPatFeedback('wrong');
@@ -115,7 +113,6 @@ export const BalancePatternGame: React.FC<BalancePatternGameProps> = ({
       soundFx.playSuccess(settings.soundEnabled);
       setGeoFeedback('correct');
       setGeoScore((s) => s + 1);
-      speakText(`Chính xác! ${currentGeo.explanationVi}`, 'vi', settings.speechEnabled);
     } else {
       soundFx.playError(settings.soundEnabled);
       setGeoFeedback('wrong');

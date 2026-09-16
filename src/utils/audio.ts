@@ -174,21 +174,69 @@ export const soundFx = {
   },
 };
 
-// Speech synthesis for Grade 1 kids
+export function stopSpeech() {
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.cancel();
+    } catch {
+      // ignore
+    }
+  }
+}
+
+// Child-friendly Speech synthesis (prefer warm female/teacher voice, higher pitch)
 export function speakText(text: string, lang: 'vi' | 'en' = 'vi', enabled = true) {
   if (!enabled || typeof window === 'undefined' || !('speechSynthesis' in window)) return;
   try {
-    window.speechSynthesis.cancel(); // stop previous speech
+    window.speechSynthesis.cancel(); // stop any previous speech
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = lang === 'vi' ? 'vi-VN' : 'en-US';
-    utterance.rate = 0.9; // clear, gentle pace for Grade 1 children
-    utterance.pitch = 1.1; // warm, slightly higher pitch for friendliness
+    utterance.rate = 0.88; // clear, gentle pace for primary school kids
+    utterance.pitch = 1.25; // warm, sweet and friendly teacher pitch
 
-    // Find best matching voice if available
+    // Find best matching female/teacher voice, avoiding deep male voices
     const voices = window.speechSynthesis.getVoices();
-    const targetVoice = voices.find(v => v.lang.startsWith(lang === 'vi' ? 'vi' : 'en'));
-    if (targetVoice) {
-      utterance.voice = targetVoice;
+    const langVoices = voices.filter((v) =>
+      v.lang.toLowerCase().startsWith(lang === 'vi' ? 'vi' : 'en')
+    );
+
+    if (langVoices.length > 0) {
+      if (lang === 'vi') {
+        // Look for sweet female Vietnamese voices (HoaiMy, Mai, Linh, or non-Nam)
+        const femaleVi = langVoices.find((v) => {
+          const n = v.name.toLowerCase();
+          return (
+            n.includes('hoaimy') ||
+            n.includes('mai') ||
+            n.includes('linh') ||
+            n.includes('female') ||
+            n.includes('google')
+          );
+        });
+        const nonMaleVi = langVoices.find((v) => {
+          const n = v.name.toLowerCase();
+          return !n.includes('nam') && !n.includes('an ') && !n.includes('male');
+        });
+        utterance.voice = femaleVi || nonMaleVi || langVoices[0];
+      } else {
+        // Look for female English voices (Samantha, Victoria, Zira, Jenny, Aria)
+        const femaleEn = langVoices.find((v) => {
+          const n = v.name.toLowerCase();
+          return (
+            n.includes('samantha') ||
+            n.includes('victoria') ||
+            n.includes('zira') ||
+            n.includes('jenny') ||
+            n.includes('aria') ||
+            n.includes('female')
+          );
+        });
+        const nonMaleEn = langVoices.find((v) => {
+          const n = v.name.toLowerCase();
+          return !n.includes('david') && !n.includes('george') && !n.includes('male');
+        });
+        utterance.voice = femaleEn || nonMaleEn || langVoices[0];
+      }
     }
 
     window.speechSynthesis.speak(utterance);

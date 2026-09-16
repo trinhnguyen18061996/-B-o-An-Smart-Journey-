@@ -51,9 +51,7 @@ export const AIPracticeCard: React.FC<AIPracticeCardProps> = ({
     try {
       const q = await generateAIQuestionApi(subject, gradeLevel, undefined, childName);
       setQuestionData(q);
-      if (settings.speechEnabled) {
-        speakText(q.question, subject === 'english' ? 'en' : 'vi');
-      }
+      // Removed automatic speech; kid can tap the speaker icon to hear the question
     } catch (e) {
       console.error(e);
     } finally {
@@ -75,14 +73,8 @@ export const AIPracticeCard: React.FC<AIPracticeCardProps> = ({
       soundFx.playCorrect(settings.soundEnabled);
       soundFx.playStar(settings.soundEnabled);
       onAnswerCorrect(2);
-      if (settings.speechEnabled) {
-        speakText('Chính xác! Bé làm rất xuất sắc!', 'vi');
-      }
     } else {
       soundFx.playWrong(settings.soundEnabled);
-      if (settings.speechEnabled) {
-        speakText('Chưa đúng rồi, bé hãy xem lời giải thích nhé!', 'vi');
-      }
     }
   };
 

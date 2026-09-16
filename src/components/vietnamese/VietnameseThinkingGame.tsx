@@ -52,11 +52,9 @@ export const VietnameseThinkingGame: React.FC<VietnameseThinkingGameProps> = ({
       soundFx.playSuccess(settings.soundEnabled);
       setRiddleFeedback('correct');
       setRiddleScore((s) => s + 1);
-      speakText(`Chính xác! ${currentRiddle.explanationVi}`, 'vi', settings.speechEnabled);
     } else {
       soundFx.playError(settings.soundEnabled);
       setRiddleFeedback('wrong');
-      speakText('Chưa đúng rồi, bé hãy thử lại hoặc xem gợi ý nhé!', 'vi', settings.speechEnabled);
     }
   };
 
@@ -92,7 +90,6 @@ export const VietnameseThinkingGame: React.FC<VietnameseThinkingGameProps> = ({
         soundFx.playSuccess(settings.soundEnabled);
         setSentenceFeedback('correct');
         setSentenceScore((s) => s + 1);
-        speakText(`Đúng rồi! ${currentSentence.targetSentence}`, 'vi', settings.speechEnabled);
       } else if (next.length === currentSentence.scrambledWords.length) {
         soundFx.playError(settings.soundEnabled);
         setSentenceFeedback('wrong');
@@ -125,7 +122,6 @@ export const VietnameseThinkingGame: React.FC<VietnameseThinkingGameProps> = ({
       soundFx.playSuccess(settings.soundEnabled);
       setOddFeedback('correct');
       setOddScore((s) => s + 1);
-      speakText(`Chính xác! ${currentOdd.reasonVi}`, 'vi', settings.speechEnabled);
     } else {
       soundFx.playError(settings.soundEnabled);
       setOddFeedback('wrong');

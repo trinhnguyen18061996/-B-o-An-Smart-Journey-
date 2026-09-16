@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { GradeLevel, ParentSettings } from '../../types';
 import { GRADE_CURRICULUM_INFO, askAITutorApi } from '../../data/gradeCurriculum';
-import { speakText, soundFx } from '../../utils/audio';
+import { speakText, soundFx, stopSpeech } from '../../utils/audio';
 
 interface AITutorModalProps {
   isOpen: boolean;
@@ -99,11 +99,7 @@ export const AITutorModal: React.FC<AITutorModalProps> = ({
       const aiMsg = { sender: 'ai' as const, text: aiResponse, time: timeStr };
       setConversation((prev) => [...prev, aiMsg]);
       soundFx.playCorrect(settings.soundEnabled);
-
-      // Auto speak response if enabled
-      if (settings.speechEnabled) {
-        speakText(aiResponse, 'vi');
-      }
+      // Removed automatic AI voice reading per user preference; user can click speaker button if desired
     } catch (e) {
       console.error(e);
     } finally {
@@ -139,6 +135,7 @@ export const AITutorModal: React.FC<AITutorModalProps> = ({
           <button
             onClick={() => {
               soundFx.playPop(settings.soundEnabled);
+              stopSpeech();
               onClose();
             }}
             className="p-2 text-white/80 hover:text-white hover:bg-white/15 rounded-xl transition-all cursor-pointer"

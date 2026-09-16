@@ -44,11 +44,9 @@ export const EnglishThinkingGame: React.FC<EnglishThinkingGameProps> = ({
       soundFx.playSuccess(settings.soundEnabled);
       setMathFeedback('correct');
       setMathScore((s) => s + 1);
-      speakText(`Excellent! That is correct! ${currentMath.hintEn}`, 'en', settings.speechEnabled);
     } else {
       soundFx.playError(settings.soundEnabled);
       setMathFeedback('wrong');
-      speakText('Try again! You can do it!', 'en', settings.speechEnabled);
     }
   };
 
@@ -82,7 +80,6 @@ export const EnglishThinkingGame: React.FC<EnglishThinkingGameProps> = ({
         soundFx.playSuccess(settings.soundEnabled);
         setScrambleFeedback('correct');
         setScrambleScore((s) => s + 1);
-        speakText(`Awesome! ${currentScramble.wordEn}. ${currentScramble.exampleSentence}`, 'en', settings.speechEnabled);
       } else {
         soundFx.playError(settings.soundEnabled);
         setScrambleFeedback('wrong');
