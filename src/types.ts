@@ -60,9 +60,8 @@ export interface SchoolPeriod {
   session: 'morning' | 'afternoon'; // 'morning' | 'afternoon'
   time?: string; // e.g. "07:30 - 08:05"
   subjectName: string; // "Chào cờ", "Tiếng Việt", "Toán", "Tiếng Anh", v.v.
-  note?: string; // Ghi chú: Mang màu vẽ, mang giày thể thao...
   teacher?: string; // e.g. "th. Chung", "c. Thi", "c. Thanh (GVCN)"
-  note?: string;
+  note?: string; // Ghi chú: Mang màu vẽ, mang giày thể thao...
 }
 
 export interface SchoolDaySchedule {

@@ -615,6 +615,25 @@ export const ParentModal: React.FC<ParentModalProps> = ({
                         <span>Chọn Tệp Excel (.xlsx, .xls, .csv) Để Nhập</span>
                       </button>
 
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTempSchoolTimetable(DEFAULT_SCHOOL_TIMETABLE);
+                          onUpdateState({
+                            ...appState,
+                            settings: {
+                              ...settings,
+                              schoolTimetable: DEFAULT_SCHOOL_TIMETABLE,
+                            },
+                          });
+                          showSaveSuccess('✅ Đã nạp và lưu chuẩn Thời Khóa Biểu Trường Tiểu học Huỳnh Ngọc Huệ (Lớp 1/8)!');
+                        }}
+                        className="px-3 py-2 bg-sky-50 hover:bg-sky-100 text-sky-800 border-2 border-sky-300 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer active:scale-95"
+                      >
+                        <RotateCcw className="w-4 h-4 text-sky-600" />
+                        <span>Nạp Chuẩn TKB Huỳnh Ngọc Huệ (Lớp 1/8)</span>
+                      </button>
+
                       <input
                         ref={scheduleFileInputRef}
                         type="file"
