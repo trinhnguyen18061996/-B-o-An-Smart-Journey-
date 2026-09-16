@@ -1,13 +1,21 @@
 import React, { useState } from 'react';
-import { Volume2, Sparkles, CheckCircle2, ChevronRight, MessageCircle, BookOpen, Music, Users, Repeat } from 'lucide-react';
+import { Volume2, Sparkles, CheckCircle2, ChevronRight, MessageCircle, BookOpen, Music, Users, Repeat, Brain, GraduationCap } from 'lucide-react';
 import { EnglishGameMode, GradeLevel, ParentSettings } from '../types';
 import { ENGLISH_DIALOGUES, ENGLISH_VOCABULARY, EnglishDialogue, EnglishVocabItem } from '../data/englishLessons';
+import {
+  GRADE_CURRICULUM_INFO,
+  GRADE_ENGLISH_QUIZ,
+  GradeEnglishQuizItem,
+} from '../data/gradeCurriculum';
 import { translations } from '../utils/translations';
 import { soundFx, speakText } from '../utils/audio';
+import { EnglishThinkingGame } from './english/EnglishThinkingGame';
+import { AIPracticeCard } from './ai/AIPracticeCard';
 
 interface EnglishGameProps {
   settings: ParentSettings;
   gradeLevel: GradeLevel;
+  childName?: string;
   onFinishExercise: (subject: 'english', mode: string, score: number, total: number, stars: number) => void;
 }
 
@@ -94,10 +102,21 @@ const DAILY_COMMUNICATION_PHRASES = [
 export const EnglishGame: React.FC<EnglishGameProps> = ({
   settings,
   gradeLevel,
+  childName = 'bé',
   onFinishExercise,
 }) => {
-  const [mode, setMode] = useState<EnglishGameMode>('dialogue');
+  const currentGradeInfo = GRADE_CURRICULUM_INFO[gradeLevel] || GRADE_CURRICULUM_INFO.grade_1;
+  const gradeQuizList = GRADE_ENGLISH_QUIZ[gradeLevel] || GRADE_ENGLISH_QUIZ.grade_1;
+
+  const [category, setCategory] = useState<'grade_curriculum' | 'ai' | 'thinking' | 'foundation'>('grade_curriculum');
+  const [mode, setMode] = useState<EnglishGameMode>('grade_quiz');
   const t = translations[settings.language];
+
+  // Grade Quiz state
+  const [quizIndex, setQuizIndex] = useState(0);
+  const [quizScore, setQuizScore] = useState(0);
+  const [selectedQuizOption, setSelectedQuizOption] = useState<number | null>(null);
+  const [quizAnswered, setQuizAnswered] = useState(false);
 
   // 1. Phonics state
   const [selectedPhonics, setSelectedPhonics] = useState(PHONICS_ALPHABET[0]);
@@ -121,6 +140,38 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({
   );
 
   const currentDialogue: EnglishDialogue = ENGLISH_DIALOGUES[dialogueIndex];
+
+  // Grade Quiz handlers
+  const currentQuiz = gradeQuizList[quizIndex % gradeQuizList.length];
+  const handleSelectQuizOption = (idx: number) => {
+    if (quizAnswered) return;
+    setSelectedQuizOption(idx);
+    setQuizAnswered(true);
+
+    if (idx === currentQuiz.correctIndex) {
+      soundFx.playCorrect(settings.soundEnabled);
+      soundFx.playStar(settings.soundEnabled);
+      setQuizScore((prev) => prev + 1);
+      speakText('Great job! That is correct!', 'en', settings.speechEnabled);
+    } else {
+      soundFx.playWrong(settings.soundEnabled);
+      speakText('Not quite right, check out the explanation!', 'en', settings.speechEnabled);
+    }
+  };
+
+  const handleNextQuiz = () => {
+    soundFx.playPop(settings.soundEnabled);
+    setSelectedQuizOption(null);
+    setQuizAnswered(false);
+
+    if (quizIndex + 1 < gradeQuizList.length) {
+      setQuizIndex((prev) => prev + 1);
+    } else {
+      onFinishExercise('english', 'grade_quiz', quizScore + (selectedQuizOption === currentQuiz.correctIndex ? 1 : 0), gradeQuizList.length, 3);
+      setQuizIndex(0);
+      setQuizScore(0);
+    }
+  };
 
   // Dialogue selection
   const handleSelectOption = (opt: EnglishDialogue['options'][0]) => {
@@ -162,76 +213,311 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Mode Navigation Tabs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <button
-          id="btn-english-mode-dialogue"
-          onClick={() => {
-            soundFx.playPop(settings.soundEnabled);
-            setMode('dialogue');
-            speakText(currentDialogue.soundPronounceEn, 'en', settings.speechEnabled);
-          }}
-          className={`p-2.5 sm:p-3 rounded-2xl font-extrabold text-xs sm:text-sm border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
-            mode === 'dialogue'
-              ? 'bg-emerald-500 text-white border-emerald-600 shadow-md scale-102'
-              : 'bg-white text-slate-700 hover:bg-emerald-50 border-emerald-200'
-          }`}
-        >
-          <span className="text-xl">💬</span>
-          <span>{t.enModeDialogue}</span>
-        </button>
-
-        <button
-          id="btn-english-mode-comm"
-          onClick={() => {
-            soundFx.playPop(settings.soundEnabled);
-            setMode('communication');
-          }}
-          className={`p-2.5 sm:p-3 rounded-2xl font-extrabold text-xs sm:text-sm border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
-            mode === 'communication'
-              ? 'bg-emerald-500 text-white border-emerald-600 shadow-md scale-102'
-              : 'bg-white text-slate-700 hover:bg-emerald-50 border-emerald-200'
-          }`}
-        >
-          <span className="text-xl">🗣️</span>
-          <span>{t.enModeCommunication}</span>
-        </button>
-
-        <button
-          id="btn-english-mode-phonics"
-          onClick={() => {
-            soundFx.playPop(settings.soundEnabled);
-            setMode('phonics');
-          }}
-          className={`p-2.5 sm:p-3 rounded-2xl font-extrabold text-xs sm:text-sm border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
-            mode === 'phonics'
-              ? 'bg-emerald-500 text-white border-emerald-600 shadow-md scale-102'
-              : 'bg-white text-slate-700 hover:bg-emerald-50 border-emerald-200'
-          }`}
-        >
-          <span className="text-xl">🔤</span>
-          <span>{t.enModePhonics}</span>
-        </button>
-
-        <button
-          id="btn-english-mode-vocab"
-          onClick={() => {
-            soundFx.playPop(settings.soundEnabled);
-            setMode('vocab');
-          }}
-          className={`p-2.5 sm:p-3 rounded-2xl font-extrabold text-xs sm:text-sm border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
-            mode === 'vocab'
-              ? 'bg-emerald-500 text-white border-emerald-600 shadow-md scale-102'
-              : 'bg-white text-slate-700 hover:bg-emerald-50 border-emerald-200'
-          }`}
-        >
-          <span className="text-xl">📚</span>
-          <span>{t.enModeVocab}</span>
-        </button>
+      {/* Grade Synchronized Header Banner */}
+      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-3xl p-4 sm:p-5 text-white shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-xs flex items-center justify-center text-2xl border border-white/20 shadow-xs">
+            🇬🇧
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="bg-amber-300 text-slate-900 font-black text-xs px-2.5 py-0.5 rounded-full shadow-xs">
+                {currentGradeInfo.titleVi} ({currentGradeInfo.ageRange})
+              </span>
+              <span className="bg-white/20 text-white text-[10px] font-black px-2 py-0.5 rounded-full border border-white/30">
+                ⚡ Chuẩn Cambridge Primary & Bộ GD&ĐT
+              </span>
+            </div>
+            <h2 className="text-lg sm:text-xl font-black mt-1">Tiếng Anh Tiểu Học Hội Nhập</h2>
+            <p className="text-xs text-blue-100 font-medium">{currentGradeInfo.englishFocus}</p>
+          </div>
+        </div>
       </div>
 
+      {/* Category Tabs */}
+      <div className="bg-white rounded-2xl p-2.5 border border-indigo-200 flex items-center justify-between gap-2 shadow-2xs">
+        <div className="flex items-center gap-1.5 overflow-x-auto max-w-full">
+          <button
+            type="button"
+            onClick={() => {
+              soundFx.playPop(settings.soundEnabled);
+              setCategory('grade_curriculum');
+              setMode('grade_quiz');
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+              category === 'grade_curriculum'
+                ? 'bg-blue-600 text-white shadow-xs scale-102 ring-2 ring-blue-300'
+                : 'bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200'
+            }`}
+          >
+            <GraduationCap className="w-3.5 h-3.5 text-amber-300" />
+            <span>Chương Trình {currentGradeInfo.titleVi}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              soundFx.playPop(settings.soundEnabled);
+              setCategory('ai');
+              setMode('ai_challenge');
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+              category === 'ai'
+                ? 'bg-purple-600 text-white shadow-xs scale-102 ring-2 ring-purple-300'
+                : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+            <span>✨ Thử Thách AI Cấp Lớp</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              soundFx.playPop(settings.soundEnabled);
+              setCategory('thinking');
+              setMode('english_math');
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+              category === 'thinking'
+                ? 'bg-indigo-600 text-white shadow-xs scale-102'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <Brain className="w-3.5 h-3.5" />
+            <span>Tiếng Anh Tư Duy (Toán & Xếp chữ)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              soundFx.playPop(settings.soundEnabled);
+              setCategory('foundation');
+              setMode('dialogue');
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+              category === 'foundation'
+                ? 'bg-emerald-600 text-white shadow-xs scale-102'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <MessageCircle className="w-3.5 h-3.5" />
+            <span>Giao Tiếp & Phonics</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Sub-Mode Navigation Tabs */}
+      {category === 'thinking' && (
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => {
+              soundFx.playPop(settings.soundEnabled);
+              setMode('english_math');
+            }}
+            className={`p-2.5 rounded-2xl font-black text-xs border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              mode === 'english_math'
+                ? 'bg-blue-600 text-white border-blue-700 shadow-md scale-102'
+                : 'bg-white text-slate-700 hover:bg-blue-50 border-blue-200'
+            }`}
+          >
+            <span className="text-base">🔤</span>
+            <span>Math in English (Toán Tiếng Anh)</span>
+          </button>
+
+          <button
+            onClick={() => {
+              soundFx.playPop(settings.soundEnabled);
+              setMode('word_scramble');
+            }}
+            className={`p-2.5 rounded-2xl font-black text-xs border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              mode === 'word_scramble'
+                ? 'bg-blue-600 text-white border-blue-700 shadow-md scale-102'
+                : 'bg-white text-slate-700 hover:bg-blue-50 border-blue-200'
+            }`}
+          >
+            <span className="text-base">🐝</span>
+            <span>Word Scramble (Xếp Chữ)</span>
+          </button>
+        </div>
+      )}
+
+      {category === 'foundation' && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <button
+            id="btn-english-mode-dialogue"
+            onClick={() => {
+              soundFx.playPop(settings.soundEnabled);
+              setMode('dialogue');
+              speakText(currentDialogue.soundPronounceEn, 'en', settings.speechEnabled);
+            }}
+            className={`p-2.5 sm:p-3 rounded-2xl font-extrabold text-xs sm:text-sm border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
+              mode === 'dialogue'
+                ? 'bg-emerald-500 text-white border-emerald-600 shadow-md scale-102'
+                : 'bg-white text-slate-700 hover:bg-emerald-50 border-emerald-200'
+            }`}
+          >
+            <span className="text-xl">💬</span>
+            <span>{t.enModeDialogue}</span>
+          </button>
+
+          <button
+            id="btn-english-mode-comm"
+            onClick={() => {
+              soundFx.playPop(settings.soundEnabled);
+              setMode('communication');
+            }}
+            className={`p-2.5 sm:p-3 rounded-2xl font-extrabold text-xs sm:text-sm border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
+              mode === 'communication'
+                ? 'bg-emerald-500 text-white border-emerald-600 shadow-md scale-102'
+                : 'bg-white text-slate-700 hover:bg-emerald-50 border-emerald-200'
+            }`}
+          >
+            <span className="text-xl">🗣️</span>
+            <span>{t.enModeCommunication}</span>
+          </button>
+
+          <button
+            id="btn-english-mode-phonics"
+            onClick={() => {
+              soundFx.playPop(settings.soundEnabled);
+              setMode('phonics');
+            }}
+            className={`p-2.5 sm:p-3 rounded-2xl font-extrabold text-xs sm:text-sm border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
+              mode === 'phonics'
+                ? 'bg-emerald-500 text-white border-emerald-600 shadow-md scale-102'
+                : 'bg-white text-slate-700 hover:bg-emerald-50 border-emerald-200'
+            }`}
+          >
+            <span className="text-xl">🔤</span>
+            <span>{t.enModePhonics}</span>
+          </button>
+
+          <button
+            id="btn-english-mode-vocab"
+            onClick={() => {
+              soundFx.playPop(settings.soundEnabled);
+              setMode('vocab');
+            }}
+            className={`p-2.5 sm:p-3 rounded-2xl font-extrabold text-xs sm:text-sm border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
+              mode === 'vocab'
+                ? 'bg-emerald-500 text-white border-emerald-600 shadow-md scale-102'
+                : 'bg-white text-slate-700 hover:bg-emerald-50 border-emerald-200'
+            }`}
+          >
+            <span className="text-xl">📚</span>
+            <span>{t.enModeVocab}</span>
+          </button>
+        </div>
+      )}
+
+      {/* AI THỬ THÁCH THÍCH ỨNG THEO LỚP */}
+      {category === 'ai' && (
+        <AIPracticeCard
+          subject="english"
+          gradeLevel={gradeLevel}
+          childName={childName}
+          settings={settings}
+          onAnswerCorrect={(stars) => {
+            onFinishExercise('english', 'ai_challenge', 1, 1, stars);
+          }}
+        />
+      )}
+
+      {/* CHƯƠNG TRÌNH TIẾNG ANH THEO CẤP LỚP */}
+      {category === 'grade_curriculum' && (
+        <div className="bg-white rounded-3xl p-5 sm:p-7 border-2 border-blue-200 shadow-sm space-y-5">
+          <div className="flex items-center justify-between pb-3 border-b border-blue-100">
+            <div>
+              <span className="text-xs font-black text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+                Question {(quizIndex % gradeQuizList.length) + 1}/{gradeQuizList.length} • {currentQuiz.topic} ({currentGradeInfo.titleVi})
+              </span>
+              <h3 className="font-extrabold text-base sm:text-lg text-slate-900 mt-2">
+                {currentQuiz.question}
+              </h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => speakText(currentQuiz.question, 'en', settings.speechEnabled)}
+                className="p-2 rounded-xl bg-blue-100 text-blue-700 hover:bg-blue-200 cursor-pointer"
+                title="Listen to question"
+              >
+                <Volume2 className="w-4 h-4" />
+              </button>
+              <span className="font-black text-amber-600 text-sm bg-amber-100 px-3 py-1 rounded-full border border-amber-300">
+                ⭐ {quizScore}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            {currentQuiz.options.map((opt, idx) => {
+              const isSelected = selectedQuizOption === idx;
+              const isCorrect = idx === currentQuiz.correctIndex;
+              let btnStyle = 'bg-white hover:bg-blue-50 border-blue-200 text-slate-800';
+
+              if (quizAnswered) {
+                if (isCorrect) {
+                  btnStyle = 'bg-emerald-500 text-white border-emerald-600 shadow-md scale-102';
+                } else if (isSelected) {
+                  btnStyle = 'bg-rose-500 text-white border-rose-600';
+                } else {
+                  btnStyle = 'bg-slate-50 text-slate-400 border-slate-200 opacity-60';
+                }
+              }
+
+              return (
+                <button
+                  key={idx}
+                  onClick={() => handleSelectQuizOption(idx)}
+                  disabled={quizAnswered}
+                  className={`p-4 rounded-2xl font-bold text-left border-2 transition-all cursor-pointer flex items-start gap-3 ${btnStyle}`}
+                >
+                  <span className="w-7 h-7 rounded-xl bg-black/10 flex items-center justify-center text-sm font-black shrink-0">
+                    {String.fromCharCode(65 + idx)}
+                  </span>
+                  <span className="text-sm sm:text-base font-extrabold pt-0.5">{opt}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {quizAnswered && (
+            <div className={`p-4 rounded-2xl border-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+              selectedQuizOption === currentQuiz.correctIndex
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                : 'bg-amber-50 border-amber-300 text-amber-900'
+            }`}>
+              <div className="text-sm font-medium">
+                <span className="font-black block text-base mb-1">
+                  {selectedQuizOption === currentQuiz.correctIndex ? '🎉 Awesome!' : '💡 Explanation & Meaning:'}
+                </span>
+                {currentQuiz.explanation}
+              </div>
+              <button
+                onClick={handleNextQuiz}
+                className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black text-sm rounded-xl shadow cursor-pointer flex items-center gap-1.5 shrink-0 self-end sm:self-auto"
+              >
+                <span>Next Question</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* THINKING MODES */}
+      {category === 'thinking' && (mode === 'english_math' || mode === 'word_scramble') && (
+        <EnglishThinkingGame
+          settings={settings}
+          mode={mode}
+          onFinishExercise={onFinishExercise}
+        />
+      )}
+
       {/* MODE 1: INTERACTIVE DIALOGUE (HỘI THOẠI PHẢN XẠ) */}
-      {mode === 'dialogue' && (
+      {category === 'foundation' && mode === 'dialogue' && (
         <div className="bg-white rounded-3xl p-5 sm:p-7 border-2 border-emerald-200 shadow-sm space-y-5">
           <div className="flex items-center justify-between pb-3 border-b border-emerald-100">
             <div>
@@ -341,7 +627,7 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({
       )}
 
       {/* MODE 2: DAILY COMMUNICATION PHRASES (TỰ TIN GIAO TIẾP HẰNG NGÀY) */}
-      {mode === 'communication' && (
+      {category === 'foundation' && mode === 'communication' && (
         <div className="bg-white rounded-3xl p-5 sm:p-7 border-2 border-emerald-200 shadow-sm space-y-5">
           <div className="flex items-center justify-between pb-3 border-b border-emerald-100">
             <div>
@@ -435,7 +721,7 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({
       )}
 
       {/* MODE 3: PHONICS & ALPHABET (NGỮ ÂM & BẢNG CHỮ CÁI TIẾNG ANH) */}
-      {mode === 'phonics' && (
+      {category === 'foundation' && mode === 'phonics' && (
         <div className="bg-white rounded-3xl p-5 sm:p-7 border-2 border-emerald-200 shadow-sm space-y-5">
           <div className="flex items-center justify-between pb-3 border-b border-emerald-100">
             <div>
@@ -505,7 +791,7 @@ export const EnglishGame: React.FC<EnglishGameProps> = ({
       )}
 
       {/* MODE 4: THEMATIC VOCABULARY (TỪ VỰNG THEO CHỦ ĐỀ) */}
-      {mode === 'vocab' && (
+      {category === 'foundation' && mode === 'vocab' && (
         <div className="bg-white rounded-3xl p-5 sm:p-7 border-2 border-emerald-200 shadow-sm space-y-5">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-3 border-b border-emerald-100">
             <div>

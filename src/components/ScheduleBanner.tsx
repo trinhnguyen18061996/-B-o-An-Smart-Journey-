@@ -5,8 +5,6 @@ import {
   ChevronDown,
   ChevronUp,
   Settings2,
-  FileSpreadsheet,
-  Download,
   Backpack,
   CheckCircle2,
   Phone,
@@ -20,7 +18,6 @@ import {
   DEFAULT_SCHOOL_TIMETABLE,
   HUYNH_NGOC_HUE_CLASS_INFO,
   getSubjectMeta,
-  exportTimetableToExcel,
 } from '../utils/timetableHelper';
 import { soundFx } from '../utils/audio';
 
@@ -43,10 +40,12 @@ export const ScheduleBanner: React.FC<ScheduleBannerProps> = ({
       ? settings.schoolTimetable
       : DEFAULT_SCHOOL_TIMETABLE;
 
+  const showWeekends = !!settings.showWeekendTimetable;
+  const dayIndices = showWeekends ? [1, 2, 3, 4, 5, 6, 0] : [1, 2, 3, 4, 5];
+
   const todayDayIndex = new Date().getDay(); // 0 = Sun, 1 = Mon ... 6 = Sat
-  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(
-    timetable.some((d) => d.dayIndex === todayDayIndex) ? todayDayIndex : 1
-  );
+  const initialDayIndex = dayIndices.includes(todayDayIndex) ? todayDayIndex : 1;
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(initialDayIndex);
   const [showFullWeeklyView, setShowFullWeeklyView] = useState(isStandaloneView);
   const [showBackpackChecklist, setShowBackpackChecklist] = useState(false);
   const [checkedItems, setCheckedItems] = useState<{ [key: string]: boolean }>({});
@@ -56,18 +55,13 @@ export const ScheduleBanner: React.FC<ScheduleBannerProps> = ({
     timetable.find((d) => d.dayIndex === 1) ||
     DEFAULT_SCHOOL_TIMETABLE[0];
 
-  const handleDownloadExcel = () => {
-    soundFx.playSuccess(settings.soundEnabled);
-    exportTimetableToExcel(timetable, childName);
-  };
-
   const toggleCheckItem = (id: string) => {
     soundFx.playPop(settings.soundEnabled);
     setCheckedItems((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Days list for selector (Mon -> Fri, Sat, Sun)
-  const orderedDays = [1, 2, 3, 4, 5, 6, 0]
+  // Days list for selector (Mon -> Fri by default, Sat/Sun if enabled in Settings)
+  const orderedDays = dayIndices
     .map((idx) => timetable.find((d) => d.dayIndex === idx))
     .filter(Boolean) as SchoolDaySchedule[];
 
@@ -211,16 +205,6 @@ export const ScheduleBanner: React.FC<ScheduleBannerProps> = ({
             >
               <Backpack className="w-3.5 h-3.5" />
               <span>Soạn Cặp Sách</span>
-            </button>
-
-            <button
-              id="btn-schedule-banner-settings"
-              onClick={onOpenScheduleSettings}
-              title="Nhập file Excel thời khóa biểu hoặc chỉnh sửa"
-              className="flex items-center gap-1 px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-amber-950 rounded-xl text-xs font-black border border-amber-500 shadow-2xs cursor-pointer active:scale-95"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5" />
-              <span>Nhập Excel / Cài Đặt</span>
             </button>
           </div>
         </div>
@@ -461,19 +445,11 @@ export const ScheduleBanner: React.FC<ScheduleBannerProps> = ({
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={handleDownloadExcel}
-                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Tải Bản Excel (.xlsx)</span>
-                </button>
-                <button
-                  type="button"
                   onClick={onOpenScheduleSettings}
-                  className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-extrabold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+                  className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
                 >
-                  <Settings2 className="w-3.5 h-3.5" />
-                  <span>Nhập File Mới</span>
+                  <Settings2 className="w-3.5 h-3.5 text-amber-700" />
+                  <span>Cài đặt thời khóa biểu</span>
                 </button>
               </div>
             </div>
@@ -485,217 +461,141 @@ export const ScheduleBanner: React.FC<ScheduleBannerProps> = ({
                   <tr className="bg-slate-800 text-white border-b border-slate-700 text-center font-black">
                     <th className="p-2 border-r border-slate-700 w-14">TIẾT</th>
                     <th className="p-2 border-r border-slate-700 w-28">THỜI GIAN</th>
-                    <th className="p-2 border-r border-slate-700 min-w-[130px] bg-amber-600 text-white">THỨ HAI</th>
-                    <th className="p-2 border-r border-slate-700 min-w-[130px] bg-sky-600 text-white">THỨ BA</th>
-                    <th className="p-2 border-r border-slate-700 min-w-[130px] bg-amber-600 text-white">THỨ TƯ</th>
-                    <th className="p-2 border-r border-slate-700 min-w-[130px] bg-orange-600 text-white">THỨ NĂM</th>
-                    <th className="p-2 min-w-[130px] bg-blue-600 text-white">THỨ SÁU</th>
+                    {orderedDays.map((d) => (
+                      <th
+                        key={d.dayIndex}
+                        className={`p-2 border-r border-slate-700 min-w-[120px] text-white ${
+                          d.dayIndex === 1
+                            ? 'bg-amber-600'
+                            : d.dayIndex === 2
+                            ? 'bg-sky-600'
+                            : d.dayIndex === 3
+                            ? 'bg-amber-600'
+                            : d.dayIndex === 4
+                            ? 'bg-orange-600'
+                            : d.dayIndex === 5
+                            ? 'bg-blue-600'
+                            : 'bg-emerald-600'
+                        }`}
+                      >
+                        {d.dayNameVi.toUpperCase()}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
                   {/* BUỔI SÁNG Banner */}
                   <tr className="bg-amber-100/90 text-amber-950 font-black text-center border-b border-amber-200">
-                    <td colSpan={7} className="py-1.5 tracking-wide text-xs">
+                    <td colSpan={orderedDays.length + 2} className="py-1.5 tracking-wide text-xs">
                       ☀️ BUỔI SÁNG
                     </td>
                   </tr>
 
-                  {/* Sáng Tiết 1 */}
-                  <tr className="border-b border-slate-200 hover:bg-amber-50/40">
-                    <td className="p-2 text-center font-black text-slate-700 border-r border-slate-200 bg-slate-50">
-                      Tiết 1
-                    </td>
-                    <td className="p-2 text-center text-slate-600 font-semibold border-r border-slate-200 bg-slate-50">
-                      7h30 - 8h15
-                    </td>
-                    {/* T2 */}
-                    <td className="p-2 border-r border-slate-200 text-center font-bold text-red-700 bg-red-50/60">
-                      CC - HĐTN
-                    </td>
-                    {/* T3 */}
-                    <td className="p-2 border-r border-slate-200 text-center font-bold text-sky-700 bg-sky-50/60">
-                      Toán
-                    </td>
-                    {/* T4 */}
-                    <td className="p-2 border-r border-slate-200 text-center text-slate-300 italic">
-                      (Vào lớp 8h00)
-                    </td>
-                    {/* T5 */}
-                    <td className="p-2 border-r border-slate-200 text-center text-slate-300 italic">
-                      (Vào lớp 8h00)
-                    </td>
-                    {/* T6 */}
-                    <td className="p-2 text-center text-slate-300 italic">
-                      (Vào lớp 8h00)
-                    </td>
-                  </tr>
-
-                  {/* Sáng Tiết 2 */}
-                  <tr className="border-b border-slate-200 hover:bg-amber-50/40">
-                    <td className="p-2 text-center font-black text-slate-700 border-r border-slate-200 bg-slate-50">
-                      Tiết 2
-                    </td>
-                    <td className="p-2 text-center text-slate-600 font-semibold border-r border-slate-200 bg-slate-50">
-                      8h20 - 8h55
-                    </td>
-                    {/* T2 */}
-                    <td className="p-2 border-r border-slate-200 text-center">
-                      <div className="font-bold text-indigo-700">Đạo đức</div>
-                      <div className="text-[10px] text-slate-500 italic">(th. Chung)</div>
-                    </td>
-                    {/* T3 */}
-                    <td className="p-2 border-r border-slate-200 text-center">
-                      <div className="font-bold text-pink-700">Âm nhạc</div>
-                      <div className="text-[10px] text-slate-500 italic">(c. Thi)</div>
-                    </td>
-                    {/* T4 */}
-                    <td className="p-2 border-r border-slate-200 text-center">
-                      <div className="font-bold text-teal-700">TNXH</div>
-                      <div className="text-[10px] text-slate-500 italic">(c. Ngân)</div>
-                    </td>
-                    {/* T5 */}
-                    <td className="p-2 border-r border-slate-200 text-center">
-                      <div className="font-bold text-rose-700">Tiếng Việt</div>
-                    </td>
-                    {/* T6 */}
-                    <td className="p-2 text-center">
-                      <div className="font-bold text-sky-700">Toán TC</div>
-                      <div className="text-[10px] text-slate-500 italic">(c. Mai)</div>
-                    </td>
-                  </tr>
-
-                  {/* RA CHƠI SÁNG */}
-                  <tr className="bg-sky-50 text-sky-900 text-center font-extrabold border-b border-sky-200">
-                    <td colSpan={7} className="py-1 text-[11px] tracking-wider">
-                      ⚡ RA CHƠI 8H55 – 9H15 ⚡
-                    </td>
-                  </tr>
-
-                  {/* Sáng Tiết 3 */}
-                  <tr className="border-b border-slate-200 hover:bg-amber-50/40">
-                    <td className="p-2 text-center font-black text-slate-700 border-r border-slate-200 bg-slate-50">
-                      Tiết 3
-                    </td>
-                    <td className="p-2 text-center text-slate-600 font-semibold border-r border-slate-200 bg-slate-50">
-                      9h15 - 9h50
-                    </td>
-                    <td className="p-2 border-r border-slate-200 text-center font-bold text-rose-700">Tiếng Việt</td>
-                    <td className="p-2 border-r border-slate-200 text-center font-bold text-rose-700">Tiếng Việt</td>
-                    <td className="p-2 border-r border-slate-200 text-center font-bold text-sky-700">Toán</td>
-                    <td className="p-2 border-r border-slate-200 text-center font-bold text-rose-700">Tiếng Việt</td>
-                    <td className="p-2 text-center font-bold text-rose-700">Tiếng Việt</td>
-                  </tr>
-
-                  {/* Sáng Tiết 4 */}
-                  <tr className="border-b-2 border-slate-300 hover:bg-amber-50/40">
-                    <td className="p-2 text-center font-black text-slate-700 border-r border-slate-200 bg-slate-50">
-                      Tiết 4
-                    </td>
-                    <td className="p-2 text-center text-slate-600 font-semibold border-r border-slate-200 bg-slate-50">
-                      9h55 - 10h30
-                    </td>
-                    <td className="p-2 border-r border-slate-200 text-center font-bold text-rose-700">Tiếng Việt</td>
-                    <td className="p-2 border-r border-slate-200 text-center font-bold text-rose-700">Tiếng Việt</td>
-                    <td className="p-2 border-r border-slate-200 text-center">
-                      <div className="font-bold text-purple-700">Mĩ thuật</div>
-                      <div className="text-[10px] text-slate-500 italic">(c. Thảo)</div>
-                    </td>
-                    <td className="p-2 border-r border-slate-200 text-center font-bold text-sky-700">Toán (TC)</td>
-                    <td className="p-2 text-center font-bold text-rose-700">Tiếng Việt</td>
-                  </tr>
+                  {/* Sáng Tiết 1, 2, 3, 4 */}
+                  {[
+                    { num: 1, defaultTime: '7h30 - 8h15' },
+                    { num: 2, defaultTime: '8h20 - 8h55' },
+                    { num: 3, defaultTime: '9h15 - 9h50' },
+                    { num: 4, defaultTime: '9h55 - 10h30' },
+                  ].map((pInfo, idx) => (
+                    <React.Fragment key={`morning-${pInfo.num}`}>
+                      {/* RA CHƠI SÁNG between period 2 and 3 */}
+                      {pInfo.num === 3 && (
+                        <tr className="bg-sky-50 text-sky-900 text-center font-extrabold border-b border-sky-200">
+                          <td colSpan={orderedDays.length + 2} className="py-1 text-[11px] tracking-wider">
+                            ⚡ RA CHƠI 8H55 – 9H15 ⚡
+                          </td>
+                        </tr>
+                      )}
+                      <tr className={`border-b ${idx === 3 ? 'border-b-2 border-slate-300' : 'border-slate-200'} hover:bg-amber-50/40`}>
+                        <td className="p-2 text-center font-black text-slate-700 border-r border-slate-200 bg-slate-50">
+                          Tiết {pInfo.num}
+                        </td>
+                        <td className="p-2 text-center text-slate-600 font-semibold border-r border-slate-200 bg-slate-50">
+                          {pInfo.defaultTime}
+                        </td>
+                        {orderedDays.map((day) => {
+                          const period = day.morningPeriods.find((p) => p.periodNumber === pInfo.num);
+                          if (!period) {
+                            const isLate = pInfo.num === 1 && (day.dayIndex >= 3 && day.dayIndex <= 5);
+                            return (
+                              <td key={day.dayIndex} className="p-2 border-r border-slate-200 text-center text-slate-300 italic">
+                                {isLate ? '(Vào lớp 8h00)' : '—'}
+                              </td>
+                            );
+                          }
+                          const meta = getSubjectMeta(period.subjectName);
+                          return (
+                            <td key={day.dayIndex} className={`p-2 border-r border-slate-200 text-center ${meta.bgClass}`}>
+                              <div className={`font-bold ${meta.colorClass}`}>{period.subjectName}</div>
+                              {period.teacher && (
+                                <div className="text-[10px] text-slate-500 italic">({period.teacher})</div>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    </React.Fragment>
+                  ))}
 
                   {/* NGHỈ TRƯA & BÁN TRÚ */}
                   <tr className="bg-slate-100 text-slate-700 font-black text-center border-b-2 border-slate-300">
-                    <td colSpan={7} className="py-2 text-xs">
+                    <td colSpan={orderedDays.length + 2} className="py-2 text-xs">
                       🍱 NGHỈ TRƯA & BÁN TRÚ (10h30 – 14h10)
                     </td>
                   </tr>
 
                   {/* BUỔI CHIỀU Banner */}
                   <tr className="bg-blue-100/90 text-blue-950 font-black text-center border-b border-blue-200">
-                    <td colSpan={7} className="py-1.5 tracking-wide text-xs">
+                    <td colSpan={orderedDays.length + 2} className="py-1.5 tracking-wide text-xs">
                       🌤️ BUỔI CHIỀU
                     </td>
                   </tr>
 
-                  {/* Chiều Tiết 1 */}
-                  <tr className="border-b border-slate-200 hover:bg-amber-50/40">
-                    <td className="p-2 text-center font-black text-slate-700 border-r border-slate-200 bg-slate-50">
-                      Tiết 1
-                    </td>
-                    <td className="p-2 text-center text-slate-600 font-semibold border-r border-slate-200 bg-slate-50">
-                      14h10 - 14h55
-                    </td>
-                    <td className="p-2 border-r border-slate-200 text-center font-bold text-sky-700">Toán</td>
-                    <td className="p-2 border-r border-slate-200 text-center">
-                      <div className="font-bold text-emerald-700">Tiếng Anh</div>
-                      <div className="text-[10px] text-slate-500 italic">(c. Bích)</div>
-                    </td>
-                    <td className="p-2 border-r border-slate-200 text-center font-bold text-rose-700">Tiếng Việt</td>
-                    <td className="p-2 border-r border-slate-200 text-center">
-                      <div className="font-bold text-teal-700">TNXH</div>
-                      <div className="text-[10px] text-slate-500 italic">(c. Ngân)</div>
-                    </td>
-                    <td className="p-2 text-center font-bold text-rose-700">Tiếng Việt</td>
-                  </tr>
-
-                  {/* Chiều Tiết 2 */}
-                  <tr className="border-b border-slate-200 hover:bg-amber-50/40">
-                    <td className="p-2 text-center font-black text-slate-700 border-r border-slate-200 bg-slate-50">
-                      Tiết 2
-                    </td>
-                    <td className="p-2 text-center text-slate-600 font-semibold border-r border-slate-200 bg-slate-50">
-                      15h00 - 15h35
-                    </td>
-                    <td className="p-2 border-r border-slate-200 text-center">
-                      <div className="font-bold text-rose-700">T. Việt TC</div>
-                      <div className="text-[10px] text-slate-500 italic">(c. Khanh)</div>
-                    </td>
-                    <td className="p-2 border-r border-slate-200 text-center">
-                      <div className="font-bold text-emerald-700">Tiếng Anh</div>
-                      <div className="text-[10px] text-slate-500 italic">(c. Bích)</div>
-                    </td>
-                    <td className="p-2 border-r border-slate-200 text-center font-bold text-rose-700">Tiếng Việt</td>
-                    <td className="p-2 border-r border-slate-200 text-center">
-                      <div className="font-bold text-rose-700">T. Việt TC</div>
-                      <div className="text-[10px] text-slate-500 italic">(c. Ngân)</div>
-                    </td>
-                    <td className="p-2 text-center font-bold text-rose-700">Tiếng Việt</td>
-                  </tr>
-
-                  {/* RA CHƠI CHIỀU */}
-                  <tr className="bg-sky-50 text-sky-900 text-center font-extrabold border-b border-sky-200">
-                    <td colSpan={7} className="py-1 text-[11px] tracking-wider">
-                      ⚡ RA CHƠI 15H35 – 15H55 ⚡
-                    </td>
-                  </tr>
-
-                  {/* Chiều Tiết 3 */}
-                  <tr className="border-b border-slate-200 hover:bg-amber-50/40">
-                    <td className="p-2 text-center font-black text-slate-700 border-r border-slate-200 bg-slate-50">
-                      Tiết 3
-                    </td>
-                    <td className="p-2 text-center text-slate-600 font-semibold border-r border-slate-200 bg-slate-50">
-                      15h55 - 16h30
-                    </td>
-                    <td className="p-2 border-r border-slate-200 text-center font-bold text-amber-800">
-                      HĐTN
-                    </td>
-                    <td className="p-2 border-r border-slate-200 text-center">
-                      <div className="font-bold text-orange-700">GDTC</div>
-                      <div className="text-[10px] text-slate-500 italic">(th. Học)</div>
-                    </td>
-                    <td className="p-2 border-r border-slate-200 text-center font-bold text-rose-700">
-                      T. Việt (TC)
-                    </td>
-                    <td className="p-2 border-r border-slate-200 text-center">
-                      <div className="font-bold text-orange-700">GDTC</div>
-                      <div className="text-[10px] text-slate-500 italic">(th. Học)</div>
-                    </td>
-                    <td className="p-2 text-center font-bold text-amber-800">
-                      HĐTN - SHL
-                    </td>
-                  </tr>
+                  {/* Chiều Tiết 1, 2, 3 */}
+                  {[
+                    { num: 1, defaultTime: '14h10 - 14h55' },
+                    { num: 2, defaultTime: '15h00 - 15h35' },
+                    { num: 3, defaultTime: '15h55 - 16h30' },
+                  ].map((pInfo) => (
+                    <React.Fragment key={`afternoon-${pInfo.num}`}>
+                      {/* RA CHƠI CHIỀU between period 2 and 3 */}
+                      {pInfo.num === 3 && (
+                        <tr className="bg-sky-50 text-sky-900 text-center font-extrabold border-b border-sky-200">
+                          <td colSpan={orderedDays.length + 2} className="py-1 text-[11px] tracking-wider">
+                            ⚡ RA CHƠI 15H35 – 15H55 ⚡
+                          </td>
+                        </tr>
+                      )}
+                      <tr className="border-b border-slate-200 hover:bg-amber-50/40">
+                        <td className="p-2 text-center font-black text-slate-700 border-r border-slate-200 bg-slate-50">
+                          Tiết {pInfo.num}
+                        </td>
+                        <td className="p-2 text-center text-slate-600 font-semibold border-r border-slate-200 bg-slate-50">
+                          {pInfo.defaultTime}
+                        </td>
+                        {orderedDays.map((day) => {
+                          const period = day.afternoonPeriods.find((p) => p.periodNumber === pInfo.num);
+                          if (!period) {
+                            return (
+                              <td key={day.dayIndex} className="p-2 border-r border-slate-200 text-center text-slate-300 italic">
+                                —
+                              </td>
+                            );
+                          }
+                          const meta = getSubjectMeta(period.subjectName);
+                          return (
+                            <td key={day.dayIndex} className={`p-2 border-r border-slate-200 text-center ${meta.bgClass}`}>
+                              <div className={`font-bold ${meta.colorClass}`}>{period.subjectName}</div>
+                              {period.teacher && (
+                                <div className="text-[10px] text-slate-500 italic">({period.teacher})</div>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    </React.Fragment>
+                  ))}
                 </tbody>
               </table>
             </div>

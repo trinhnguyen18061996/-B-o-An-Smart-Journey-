@@ -15,6 +15,8 @@ import { loadInitialState, saveStateToLocal } from './utils/storage';
 import { translations } from './utils/translations';
 import { soundFx } from './utils/audio';
 import { INITIAL_STICKERS } from './data/rewards';
+import { GRADE_CURRICULUM_INFO } from './data/gradeCurriculum';
+import { AITutorModal } from './components/ai/AITutorModal';
 import { CalendarDays, FileSpreadsheet, Sparkles, BookOpen, Settings, Award } from 'lucide-react';
 
 export default function App() {
@@ -30,6 +32,7 @@ export default function App() {
   const [isParentModalOpen, setIsParentModalOpen] = useState(false);
   const [isStickerAlbumOpen, setIsStickerAlbumOpen] = useState(false);
   const [isScreenTimeLocked, setIsScreenTimeLocked] = useState(false);
+  const [isAITutorOpen, setIsAITutorOpen] = useState(false);
 
   // Reward Modal state
   const [rewardData, setRewardData] = useState<{
@@ -311,6 +314,8 @@ export default function App() {
             <div className="space-y-4 animate-fade-in">
               <VietnameseGame
                 settings={settings}
+                gradeLevel={profile.gradeLevel || 'grade_1'}
+                childName={profile.name}
                 onFinishExercise={handleFinishExercise}
               />
             </div>
@@ -321,6 +326,8 @@ export default function App() {
             <div className="space-y-4 animate-fade-in">
               <MathGame
                 settings={settings}
+                gradeLevel={profile.gradeLevel || 'grade_1'}
+                childName={profile.name}
                 onFinishExercise={handleFinishExercise}
               />
             </div>
@@ -332,6 +339,7 @@ export default function App() {
               <EnglishGame
                 settings={settings}
                 gradeLevel={profile.gradeLevel || 'grade_1'}
+                childName={profile.name}
                 onFinishExercise={handleFinishExercise}
               />
             </div>
@@ -345,28 +353,15 @@ export default function App() {
                 <div>
                   <div className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-900 font-extrabold text-xs px-2.5 py-0.5 rounded-full mb-1 border border-amber-300">
                     <CalendarDays className="w-3.5 h-3.5 text-amber-700" />
-                    <span>Lịch học chính khóa ở trường</span>
+                    <span>Lịch học chính khóa ở trường (Thứ 2 – Thứ 6)</span>
                   </div>
                   <h2 className="text-xl sm:text-2xl font-black text-slate-900">
                     Thời Khóa Biểu của {profile.name || 'bé Gạo'}
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Thời khóa biểu nhập từ file Excel giúp bố mẹ và bé theo dõi các tiết học sáng chiều, sắp xếp sách vở balo chu đáo.
+                    Theo dõi các tiết học sáng chiều, giờ ra chơi và chuẩn bị sách vở chu đáo cho mỗi ngày tới lớp.
                   </p>
                 </div>
-
-                {/* Direct Excel Action */}
-                <button
-                  id="btn-timetable-import-excel"
-                  onClick={() => {
-                    soundFx.playPop(settings.soundEnabled);
-                    setIsParentModalOpen(true);
-                  }}
-                  className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white rounded-2xl font-black text-xs sm:text-sm flex items-center gap-2 cursor-pointer shadow-sm active:scale-95 shrink-0"
-                >
-                  <FileSpreadsheet className="w-4 h-4" />
-                  <span>Cập nhật file Excel TKB</span>
-                </button>
               </div>
 
               {/* Standalone Schedule Banner */}
@@ -448,6 +443,40 @@ export default function App() {
         onNextOrHome={() => {
           setRewardData((prev) => ({ ...prev, isOpen: false }));
         }}
+      />
+
+      {/* Floating AI Tutor Panda Button */}
+      <div className="fixed bottom-5 right-5 z-40">
+        <button
+          id="btn-floating-ai-tutor"
+          onClick={() => {
+            soundFx.playPop(settings.soundEnabled);
+            setIsAITutorOpen(true);
+          }}
+          className="group flex items-center gap-2.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 hover:from-purple-700 hover:to-indigo-700 text-white font-extrabold px-4 py-3 rounded-full shadow-lg hover:shadow-xl border-2 border-white/30 transition-all active:scale-95 cursor-pointer ring-4 ring-purple-400/20"
+          title="Hỏi Thầy Gia Sư AI Gấu Trúc"
+        >
+          <span className="text-2xl sm:text-3xl animate-bounce-gentle">🐼</span>
+          <div className="text-left">
+            <div className="text-xs font-black flex items-center gap-1 text-amber-300">
+              <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+              <span>Gia Sư AI {GRADE_CURRICULUM_INFO[profile.gradeLevel || 'grade_1']?.titleVi || 'Lớp 1'}</span>
+            </div>
+            <div className="text-[10px] text-purple-100 font-medium hidden sm:block">
+              Hỏi đáp & Giải thích bài tập
+            </div>
+          </div>
+        </button>
+      </div>
+
+      {/* Global AI Tutor Modal */}
+      <AITutorModal
+        isOpen={isAITutorOpen}
+        onClose={() => setIsAITutorOpen(false)}
+        gradeLevel={profile.gradeLevel || 'grade_1'}
+        childName={profile.name}
+        settings={settings}
+        initialSubject={activeTab === 'math' || activeTab === 'english' || activeTab === 'vietnamese' ? activeTab : 'math'}
       />
     </div>
   );

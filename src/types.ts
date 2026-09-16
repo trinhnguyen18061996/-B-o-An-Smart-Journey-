@@ -2,13 +2,42 @@ export type Language = 'vi' | 'en';
 
 export type GradeLevel = 'grade_1' | 'grade_2' | 'grade_3' | 'grade_4' | 'grade_5';
 
+export type AgeGroup = 'preschool' | 'primary';
+
 export type Subject = 'vietnamese' | 'math' | 'english';
 
-export type VietnameseGameMode = 'alphabet' | 'rhyme_builder' | 'missing_letter' | 'word_match';
+export type VietnameseGameMode =
+  | 'alphabet'
+  | 'rhyme_builder'
+  | 'missing_letter'
+  | 'word_match'
+  | 'riddles'
+  | 'sentence_builder'
+  | 'odd_one_out'
+  | 'grade_quiz'
+  | 'ai_challenge';
 
-export type MathGameMode = 'counting' | 'speed_math' | 'comparison' | 'shapes';
+export type MathGameMode =
+  | 'counting'
+  | 'speed_math'
+  | 'comparison'
+  | 'shapes'
+  | 'substitution'
+  | 'balance'
+  | 'pattern'
+  | 'geometry_count'
+  | 'logic_word'
+  | 'olympic_math'
+  | 'ai_challenge';
 
-export type EnglishGameMode = 'phonics' | 'communication' | 'vocab' | 'dialogue';
+export type EnglishGameMode =
+  | 'phonics'
+  | 'communication'
+  | 'vocab'
+  | 'dialogue'
+  | 'english_math'
+  | 'word_scramble'
+  | 'ai_challenge';
 
 export interface StudySession {
   id: string;
@@ -84,6 +113,7 @@ export interface ParentSettings {
   reminderEnabled: boolean;
   schedule: ScheduleDay[];
   schoolTimetable?: SchoolDaySchedule[];
+  showWeekendTimetable?: boolean;
 }
 
 export interface ChildProfile {

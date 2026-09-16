@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   X,
   Shield,
@@ -64,6 +64,7 @@ export const ParentModal: React.FC<ParentModalProps> = ({
       ? settings.schoolTimetable
       : DEFAULT_SCHOOL_TIMETABLE
   );
+  const [tempShowWeekends, setTempShowWeekends] = useState<boolean>(!!settings.showWeekendTimetable);
   const [selectedTimetableDay, setSelectedTimetableDay] = useState<number>(1); // 1 = Thứ Hai
   const [tempLimit, setTempLimit] = useState<number>(settings.dailyTimeLimitMinutes);
   const [tempReminderTime, setTempReminderTime] = useState<string>(settings.reminderTime);
@@ -77,6 +78,40 @@ export const ParentModal: React.FC<ParentModalProps> = ({
   // Feedback notifications
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string>('');
   const [scheduleImportStatus, setScheduleImportStatus] = useState<string>('');
+
+  // Keep childGradeLevel synchronized with external profile updates
+  useEffect(() => {
+    if (profile.gradeLevel) {
+      setChildGradeLevel(profile.gradeLevel);
+    }
+  }, [profile.gradeLevel]);
+
+  const handleSelectGrade = (newGrade: GradeLevel) => {
+    soundFx.playPop(settings.soundEnabled);
+    setChildGradeLevel(newGrade);
+    
+    // Auto-sync immediately to AppState and storage
+    const updatedProfile = {
+      ...profile,
+      gradeLevel: newGrade,
+    };
+    onUpdateState({
+      profile: updatedProfile,
+      settings,
+    });
+
+    const gradeNames: Record<GradeLevel, string> = {
+      grade_1: 'Lớp 1 Khởi Đầu (6-7 tuổi)',
+      grade_2: 'Lớp 2 Khám Phá (7-8 tuổi)',
+      grade_3: 'Lớp 3 Thử Thách (8-9 tuổi)',
+      grade_4: 'Lớp 4 Mở Rộng (9-10 tuổi)',
+      grade_5: 'Lớp 5 Hoàn Thiện (10-11 tuổi)',
+    };
+    setSaveSuccessMessage(`🎉 Đã tự động đồng bộ chương trình ${gradeNames[newGrade]} cho bé!`);
+    setTimeout(() => {
+      setSaveSuccessMessage('');
+    }, 4000);
+  };
 
   const avatarFileInputRef = useRef<HTMLInputElement | null>(null);
   const scheduleFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -253,6 +288,7 @@ export const ParentModal: React.FC<ParentModalProps> = ({
       settings: {
         ...settings,
         schoolTimetable: tempSchoolTimetable,
+        showWeekendTimetable: tempShowWeekends,
       },
     });
     showSaveSuccess('✅ Đã xác nhận & lưu thời khóa biểu trường lớp thành công!');
@@ -662,29 +698,51 @@ export const ParentModal: React.FC<ParentModalProps> = ({
                       </span>
                     </div>
 
-                    {/* Day Tabs */}
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-                      {[1, 2, 3, 4, 5, 6, 0].map((dayIdx) => {
-                        const dayObj = tempSchoolTimetable.find((d) => d.dayIndex === dayIdx);
-                        const isSelected = selectedTimetableDay === dayIdx;
-                        return (
-                          <button
-                            key={dayIdx}
-                            type="button"
-                            onClick={() => {
-                              soundFx.playPop(settings.soundEnabled);
-                              setSelectedTimetableDay(dayIdx);
-                            }}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all whitespace-nowrap cursor-pointer ${
-                              isSelected
-                                ? 'bg-amber-500 text-white shadow-sm scale-102 border border-amber-600'
-                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                            }`}
-                          >
-                            {dayObj?.dayNameVi || `Thứ ${dayIdx + 1}`}
-                          </button>
-                        );
-                      })}
+                    {/* Day Tabs & Weekend Toggle */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-2 bg-slate-50 rounded-2xl border border-slate-200">
+                      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
+                        {(tempShowWeekends ? [1, 2, 3, 4, 5, 6, 0] : [1, 2, 3, 4, 5]).map((dayIdx) => {
+                          const dayObj = tempSchoolTimetable.find((d) => d.dayIndex === dayIdx);
+                          const isSelected = selectedTimetableDay === dayIdx;
+                          return (
+                            <button
+                              key={dayIdx}
+                              type="button"
+                              onClick={() => {
+                                soundFx.playPop(settings.soundEnabled);
+                                setSelectedTimetableDay(dayIdx);
+                              }}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all whitespace-nowrap cursor-pointer ${
+                                isSelected
+                                  ? 'bg-amber-500 text-white shadow-sm scale-102 border border-amber-600'
+                                  : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                              }`}
+                            >
+                              {dayObj?.dayNameVi || (dayIdx === 6 ? 'Thứ Bảy' : dayIdx === 0 ? 'Chủ Nhật' : `Thứ ${dayIdx + 1}`)}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Add/Remove Weekend Toggle */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          soundFx.playPop(settings.soundEnabled);
+                          const nextState = !tempShowWeekends;
+                          setTempShowWeekends(nextState);
+                          if (!nextState && (selectedTimetableDay === 6 || selectedTimetableDay === 0)) {
+                            setSelectedTimetableDay(1);
+                          }
+                        }}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 border transition-all cursor-pointer shrink-0 ${
+                          tempShowWeekends
+                            ? 'bg-purple-100 text-purple-900 border-purple-300 hover:bg-purple-200'
+                            : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span>{tempShowWeekends ? '✓ Đang bật Thứ 7 & CN' : '+ Thêm cột Thứ 7 & CN (học thêm)'}</span>
+                      </button>
                     </div>
 
                     {/* Day Notes */}
@@ -877,16 +935,21 @@ export const ParentModal: React.FC<ParentModalProps> = ({
 
                   {/* 1. Grade Level Curriculum Selection */}
                   <div className="p-4 bg-gradient-to-br from-indigo-50/70 to-blue-50/70 rounded-2xl border-2 border-indigo-200 space-y-3">
-                    <div className="flex items-center gap-2">
-                      <GraduationCap className="w-5 h-5 text-indigo-700" />
-                      <div>
-                        <label className="text-xs font-black text-indigo-950 block">
-                          Chương Trình Lớp Học Phù Hợp Lứa Tuổi
-                        </label>
-                        <span className="text-[11px] text-indigo-800">
-                          Toán, Tiếng Việt và Tiếng Anh sẽ tự động nâng cao theo cấp lớp được chọn
-                        </span>
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center gap-2">
+                        <GraduationCap className="w-5 h-5 text-indigo-700" />
+                        <div>
+                          <label className="text-xs font-black text-indigo-950 block">
+                            Chương Trình Lớp Học Phù Hợp Lứa Tuổi
+                          </label>
+                          <span className="text-[11px] text-indigo-800">
+                            Toán, Tiếng Việt và Tiếng Anh sẽ tự động nâng cao theo cấp lớp được chọn
+                          </span>
+                        </div>
                       </div>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
+                        ⚡ Tự động đồng bộ ngay khi chọn
+                      </span>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-1">
@@ -927,10 +990,7 @@ export const ParentModal: React.FC<ParentModalProps> = ({
                           <button
                             key={item.level}
                             type="button"
-                            onClick={() => {
-                              soundFx.playPop(settings.soundEnabled);
-                              setChildGradeLevel(item.level);
-                            }}
+                            onClick={() => handleSelectGrade(item.level)}
                             className={`p-3 rounded-2xl border-2 text-left transition-all cursor-pointer ${
                               isSelected
                                 ? 'bg-indigo-600 text-white border-indigo-700 shadow-md scale-101 ring-2 ring-indigo-300'

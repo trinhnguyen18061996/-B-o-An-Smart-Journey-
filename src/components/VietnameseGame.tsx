@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Volume2, Sparkles, HelpCircle, CheckCircle2, RotateCcw, ChevronRight } from 'lucide-react';
-import { Language, ParentSettings, VietnameseGameMode } from '../types';
+import { Volume2, Sparkles, HelpCircle, CheckCircle2, RotateCcw, ChevronRight, Brain, BookOpen, GraduationCap, XCircle } from 'lucide-react';
+import { GradeLevel, Language, ParentSettings, VietnameseGameMode } from '../types';
 import {
   VIETNAMESE_ALPHABET,
   VIETNAMESE_TONES,
@@ -12,20 +12,42 @@ import {
   WordMatchQuestion,
   AlphabetItem,
 } from '../data/lessons';
+import {
+  GRADE_CURRICULUM_INFO,
+  GRADE_VIETNAMESE_QUIZ,
+  GradeVietnameseQuizItem,
+} from '../data/gradeCurriculum';
 import { translations } from '../utils/translations';
 import { soundFx, speakText } from '../utils/audio';
+import { VietnameseThinkingGame } from './vietnamese/VietnameseThinkingGame';
+import { AIPracticeCard } from './ai/AIPracticeCard';
 
 interface VietnameseGameProps {
   settings: ParentSettings;
+  gradeLevel?: GradeLevel;
+  childName?: string;
   onFinishExercise: (subject: 'vietnamese', mode: string, score: number, total: number, stars: number) => void;
 }
 
 export const VietnameseGame: React.FC<VietnameseGameProps> = ({
   settings,
+  gradeLevel = 'grade_1',
+  childName = 'bé',
   onFinishExercise,
 }) => {
-  const [mode, setMode] = useState<VietnameseGameMode>('alphabet');
+  const currentGradeInfo = GRADE_CURRICULUM_INFO[gradeLevel] || GRADE_CURRICULUM_INFO.grade_1;
+  const gradeQuizList = GRADE_VIETNAMESE_QUIZ[gradeLevel] || GRADE_VIETNAMESE_QUIZ.grade_1;
+
+  // Broad categories: 'grade_curriculum' | 'ai' | 'thinking' | 'foundation'
+  const [category, setCategory] = useState<'grade_curriculum' | 'ai' | 'thinking' | 'foundation'>('grade_curriculum');
+  const [mode, setMode] = useState<VietnameseGameMode>('grade_quiz');
   const t = translations[settings.language];
+
+  // Grade Quiz state
+  const [quizIndex, setQuizIndex] = useState(0);
+  const [quizScore, setQuizScore] = useState(0);
+  const [selectedQuizOption, setSelectedQuizOption] = useState<number | null>(null);
+  const [quizAnswered, setQuizAnswered] = useState(false);
 
   // Alphabet quiz state
   const [selectedLetter, setSelectedLetter] = useState<AlphabetItem>(VIETNAMESE_ALPHABET[0]);
@@ -179,77 +201,359 @@ export const VietnameseGame: React.FC<VietnameseGameProps> = ({
     }
   };
 
+  // Grade Quiz handlers
+  const currentQuiz = gradeQuizList[quizIndex % gradeQuizList.length];
+  const handleSelectQuizOption = (idx: number) => {
+    if (quizAnswered) return;
+    setSelectedQuizOption(idx);
+    setQuizAnswered(true);
+
+    if (idx === currentQuiz.correctIndex) {
+      soundFx.playCorrect(settings.soundEnabled);
+      soundFx.playStar(settings.soundEnabled);
+      setQuizScore((prev) => prev + 1);
+      speakText('Chính xác! Bé làm rất giỏi!', 'vi', settings.speechEnabled);
+    } else {
+      soundFx.playWrong(settings.soundEnabled);
+      speakText('Chưa đúng rồi, bé hãy xem giải thích nhé!', 'vi', settings.speechEnabled);
+    }
+  };
+
+  const handleNextQuiz = () => {
+    soundFx.playPop(settings.soundEnabled);
+    setSelectedQuizOption(null);
+    setQuizAnswered(false);
+
+    if (quizIndex + 1 < gradeQuizList.length) {
+      setQuizIndex((prev) => prev + 1);
+    } else {
+      onFinishExercise('vietnamese', 'grade_quiz', quizScore + (selectedQuizOption === currentQuiz.correctIndex ? 1 : 0), gradeQuizList.length, 3);
+      setQuizIndex(0);
+      setQuizScore(0);
+    }
+  };
+
   return (
     <div className="space-y-4">
-      {/* Mode Navigation Tabs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <button
-          id="btn-vn-mode-alphabet"
-          onClick={() => {
-            soundFx.playPop(settings.soundEnabled);
-            setMode('alphabet');
-          }}
-          className={`p-2.5 sm:p-3 rounded-2xl font-extrabold text-xs sm:text-sm border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
-            mode === 'alphabet'
-              ? 'bg-rose-500 text-white border-rose-600 shadow-md scale-102'
-              : 'bg-white text-slate-700 hover:bg-rose-50 border-rose-200'
-          }`}
-        >
-          <span className="text-xl">🔤</span>
-          <span>{t.vnModeAlphabet}</span>
-        </button>
-
-        <button
-          id="btn-vn-mode-rhyme"
-          onClick={() => {
-            soundFx.playPop(settings.soundEnabled);
-            setMode('rhyme_builder');
-          }}
-          className={`p-2.5 sm:p-3 rounded-2xl font-extrabold text-xs sm:text-sm border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
-            mode === 'rhyme_builder'
-              ? 'bg-rose-500 text-white border-rose-600 shadow-md scale-102'
-              : 'bg-white text-slate-700 hover:bg-rose-50 border-rose-200'
-          }`}
-        >
-          <span className="text-xl">🧩</span>
-          <span>{t.vnModeRhyme}</span>
-        </button>
-
-        <button
-          id="btn-vn-mode-missing"
-          onClick={() => {
-            soundFx.playPop(settings.soundEnabled);
-            setMode('missing_letter');
-          }}
-          className={`p-2.5 sm:p-3 rounded-2xl font-extrabold text-xs sm:text-sm border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
-            mode === 'missing_letter'
-              ? 'bg-rose-500 text-white border-rose-600 shadow-md scale-102'
-              : 'bg-white text-slate-700 hover:bg-rose-50 border-rose-200'
-          }`}
-        >
-          <span className="text-xl">✏️</span>
-          <span>{t.vnModeMissing}</span>
-        </button>
-
-        <button
-          id="btn-vn-mode-match"
-          onClick={() => {
-            soundFx.playPop(settings.soundEnabled);
-            setMode('word_match');
-          }}
-          className={`p-2.5 sm:p-3 rounded-2xl font-extrabold text-xs sm:text-sm border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
-            mode === 'word_match'
-              ? 'bg-rose-500 text-white border-rose-600 shadow-md scale-102'
-              : 'bg-white text-slate-700 hover:bg-rose-50 border-rose-200'
-          }`}
-        >
-          <span className="text-xl">🎯</span>
-          <span>{t.vnModeMatch}</span>
-        </button>
+      {/* Grade Synchronized Header Banner */}
+      <div className="bg-gradient-to-r from-rose-600 via-pink-600 to-amber-600 rounded-3xl p-4 sm:p-5 text-white shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-xs flex items-center justify-center text-2xl border border-white/20 shadow-xs">
+            🔤
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="bg-amber-300 text-rose-950 font-black text-xs px-2.5 py-0.5 rounded-full shadow-xs">
+                {currentGradeInfo.titleVi} ({currentGradeInfo.ageRange})
+              </span>
+              <span className="bg-white/20 text-white text-[10px] font-black px-2 py-0.5 rounded-full border border-white/30">
+                ⚡ Tự động đồng bộ chuẩn Bộ GD&ĐT
+              </span>
+            </div>
+            <h2 className="text-lg sm:text-xl font-black mt-1">Tiếng Việt & Ngôn Ngữ Văn Học</h2>
+            <p className="text-xs text-rose-100 font-medium">{currentGradeInfo.vietnameseFocus}</p>
+          </div>
+        </div>
       </div>
 
+      {/* Category Tabs */}
+      <div className="bg-white rounded-2xl p-2.5 border border-rose-200 flex items-center justify-between gap-2 shadow-2xs">
+        <div className="flex items-center gap-1.5 overflow-x-auto max-w-full">
+          <button
+            type="button"
+            onClick={() => {
+              soundFx.playPop(settings.soundEnabled);
+              setCategory('grade_curriculum');
+              setMode('grade_quiz');
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+              category === 'grade_curriculum'
+                ? 'bg-rose-600 text-white shadow-xs scale-102 ring-2 ring-rose-300'
+                : 'bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-200'
+            }`}
+          >
+            <GraduationCap className="w-3.5 h-3.5 text-amber-300" />
+            <span>Chương Trình {currentGradeInfo.titleVi}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              soundFx.playPop(settings.soundEnabled);
+              setCategory('ai');
+              setMode('ai_challenge');
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+              category === 'ai'
+                ? 'bg-purple-600 text-white shadow-xs scale-102 ring-2 ring-purple-300'
+                : 'bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+            <span>✨ Thử Thách AI Cấp Lớp</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              soundFx.playPop(settings.soundEnabled);
+              setCategory('thinking');
+              setMode('riddles');
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+              category === 'thinking'
+                ? 'bg-emerald-600 text-white shadow-xs scale-102'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <Brain className="w-3.5 h-3.5" />
+            <span>Tiếng Việt Tư Duy (Đố vui & Xếp câu)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              soundFx.playPop(settings.soundEnabled);
+              setCategory('foundation');
+              setMode('alphabet');
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+              category === 'foundation'
+                ? 'bg-rose-500 text-white shadow-xs scale-102'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>Nền Tảng & Ghép Vần</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Sub-Mode Navigation Tabs */}
+      {category === 'thinking' && (
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            onClick={() => {
+              soundFx.playPop(settings.soundEnabled);
+              setMode('riddles');
+            }}
+            className={`p-2.5 rounded-2xl font-black text-xs border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              mode === 'riddles'
+                ? 'bg-emerald-600 text-white border-emerald-700 shadow-md scale-102'
+                : 'bg-white text-slate-700 hover:bg-emerald-50 border-emerald-200'
+            }`}
+          >
+            <span className="text-base">🧩</span>
+            <span>Đố vui dân gian</span>
+          </button>
+
+          <button
+            onClick={() => {
+              soundFx.playPop(settings.soundEnabled);
+              setMode('sentence_builder');
+            }}
+            className={`p-2.5 rounded-2xl font-black text-xs border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              mode === 'sentence_builder'
+                ? 'bg-emerald-600 text-white border-emerald-700 shadow-md scale-102'
+                : 'bg-white text-slate-700 hover:bg-emerald-50 border-emerald-200'
+            }`}
+          >
+            <span className="text-base">🔤</span>
+            <span>Xếp chữ thành câu</span>
+          </button>
+
+          <button
+            onClick={() => {
+              soundFx.playPop(settings.soundEnabled);
+              setMode('odd_one_out');
+            }}
+            className={`p-2.5 rounded-2xl font-black text-xs border-2 transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              mode === 'odd_one_out'
+                ? 'bg-emerald-600 text-white border-emerald-700 shadow-md scale-102'
+                : 'bg-white text-slate-700 hover:bg-emerald-50 border-emerald-200'
+            }`}
+          >
+            <span className="text-base">🔍</span>
+            <span>Tìm từ khác biệt</span>
+          </button>
+        </div>
+      )}
+
+      {category === 'foundation' && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <button
+            id="btn-vn-mode-alphabet"
+            onClick={() => {
+              soundFx.playPop(settings.soundEnabled);
+              setMode('alphabet');
+            }}
+            className={`p-2.5 sm:p-3 rounded-2xl font-extrabold text-xs sm:text-sm border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
+              mode === 'alphabet'
+                ? 'bg-rose-500 text-white border-rose-600 shadow-md scale-102'
+                : 'bg-white text-slate-700 hover:bg-rose-50 border-rose-200'
+            }`}
+          >
+            <span className="text-xl">🔤</span>
+            <span>{t.vnModeAlphabet}</span>
+          </button>
+
+          <button
+            id="btn-vn-mode-rhyme"
+            onClick={() => {
+              soundFx.playPop(settings.soundEnabled);
+              setMode('rhyme_builder');
+            }}
+            className={`p-2.5 sm:p-3 rounded-2xl font-extrabold text-xs sm:text-sm border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
+              mode === 'rhyme_builder'
+                ? 'bg-rose-500 text-white border-rose-600 shadow-md scale-102'
+                : 'bg-white text-slate-700 hover:bg-rose-50 border-rose-200'
+            }`}
+          >
+            <span className="text-xl">🧩</span>
+            <span>{t.vnModeRhyme}</span>
+          </button>
+
+          <button
+            id="btn-vn-mode-missing"
+            onClick={() => {
+              soundFx.playPop(settings.soundEnabled);
+              setMode('missing_letter');
+            }}
+            className={`p-2.5 sm:p-3 rounded-2xl font-extrabold text-xs sm:text-sm border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
+              mode === 'missing_letter'
+                ? 'bg-rose-500 text-white border-rose-600 shadow-md scale-102'
+                : 'bg-white text-slate-700 hover:bg-rose-50 border-rose-200'
+            }`}
+          >
+            <span className="text-xl">✏️</span>
+            <span>{t.vnModeMissing}</span>
+          </button>
+
+          <button
+            id="btn-vn-mode-match"
+            onClick={() => {
+              soundFx.playPop(settings.soundEnabled);
+              setMode('word_match');
+            }}
+            className={`p-2.5 sm:p-3 rounded-2xl font-extrabold text-xs sm:text-sm border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
+              mode === 'word_match'
+                ? 'bg-rose-500 text-white border-rose-600 shadow-md scale-102'
+                : 'bg-white text-slate-700 hover:bg-rose-50 border-rose-200'
+            }`}
+          >
+            <span className="text-xl">🎯</span>
+            <span>{t.vnModeMatch}</span>
+          </button>
+        </div>
+      )}
+
+      {/* AI THỬ THÁCH THÍCH ỨNG THEO LỚP */}
+      {category === 'ai' && (
+        <AIPracticeCard
+          subject="vietnamese"
+          gradeLevel={gradeLevel}
+          childName={childName}
+          settings={settings}
+          onAnswerCorrect={(stars) => {
+            onFinishExercise('vietnamese', 'ai_challenge', 1, 1, stars);
+          }}
+        />
+      )}
+
+      {/* CHƯƠNG TRÌNH TIẾNG VIỆT THEO CẤP LỚP */}
+      {category === 'grade_curriculum' && (
+        <div className="bg-white rounded-3xl p-5 sm:p-7 border-2 border-rose-200 shadow-sm space-y-5">
+          <div className="flex items-center justify-between pb-3 border-b border-rose-100">
+            <div>
+              <span className="text-xs font-black text-rose-600 bg-rose-50 px-3 py-1 rounded-full border border-rose-200">
+                Câu {(quizIndex % gradeQuizList.length) + 1}/{gradeQuizList.length} • {currentQuiz.topic} ({currentGradeInfo.titleVi})
+              </span>
+              <h3 className="font-extrabold text-base sm:text-lg text-slate-900 mt-2">
+                {currentQuiz.question}
+              </h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => speakText(currentQuiz.question, 'vi', settings.speechEnabled)}
+                className="p-2 rounded-xl bg-rose-100 text-rose-700 hover:bg-rose-200 cursor-pointer"
+                title="Nghe đọc câu hỏi"
+              >
+                <Volume2 className="w-4 h-4" />
+              </button>
+              <span className="font-black text-amber-600 text-sm bg-amber-100 px-3 py-1 rounded-full border border-amber-300">
+                ⭐ {quizScore}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            {currentQuiz.options.map((opt, idx) => {
+              const isSelected = selectedQuizOption === idx;
+              const isCorrect = idx === currentQuiz.correctIndex;
+              let btnStyle = 'bg-white hover:bg-rose-50 border-rose-200 text-slate-800';
+
+              if (quizAnswered) {
+                if (isCorrect) {
+                  btnStyle = 'bg-emerald-500 text-white border-emerald-600 shadow-md scale-102';
+                } else if (isSelected) {
+                  btnStyle = 'bg-rose-500 text-white border-rose-600';
+                } else {
+                  btnStyle = 'bg-slate-50 text-slate-400 border-slate-200 opacity-60';
+                }
+              }
+
+              return (
+                <button
+                  key={idx}
+                  onClick={() => handleSelectQuizOption(idx)}
+                  disabled={quizAnswered}
+                  className={`p-4 rounded-2xl font-bold text-left border-2 transition-all cursor-pointer flex items-start gap-3 ${btnStyle}`}
+                >
+                  <span className="w-7 h-7 rounded-xl bg-black/10 flex items-center justify-center text-sm font-black shrink-0">
+                    {String.fromCharCode(65 + idx)}
+                  </span>
+                  <span className="text-sm sm:text-base font-extrabold pt-0.5">{opt}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {quizAnswered && (
+            <div className={`p-4 rounded-2xl border-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+              selectedQuizOption === currentQuiz.correctIndex
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                : 'bg-amber-50 border-amber-300 text-amber-900'
+            }`}>
+              <div className="text-sm font-medium">
+                <span className="font-black block text-base mb-1">
+                  {selectedQuizOption === currentQuiz.correctIndex ? '🎉 Chính xác!' : '💡 Lời giải chi tiết:'}
+                </span>
+                {currentQuiz.explanation}
+              </div>
+              <button
+                onClick={handleNextQuiz}
+                className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-sm rounded-xl shadow cursor-pointer flex items-center gap-1.5 shrink-0 self-end sm:self-auto"
+              >
+                <span>Câu tiếp theo</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* THINKING MODES */}
+      {category === 'thinking' && (mode === 'riddles' || mode === 'sentence_builder' || mode === 'odd_one_out') && (
+        <VietnameseThinkingGame
+          settings={settings}
+          mode={mode}
+          onFinishExercise={onFinishExercise}
+        />
+      )}
+
       {/* GAME MODE 1: ALPHABET & TONES */}
-      {mode === 'alphabet' && (
+      {category === 'foundation' && mode === 'alphabet' && (
         <div className="bg-white rounded-3xl p-4 sm:p-6 border-2 border-rose-200 shadow-sm space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-rose-100">
             <div>
@@ -413,7 +717,7 @@ export const VietnameseGame: React.FC<VietnameseGameProps> = ({
       )}
 
       {/* GAME MODE 2: RHYME BUILDER */}
-      {mode === 'rhyme_builder' && (
+      {category === 'foundation' && mode === 'rhyme_builder' && (
         <div className="bg-white rounded-3xl p-5 sm:p-7 border-2 border-rose-200 shadow-sm space-y-5">
           <div className="flex items-center justify-between pb-3 border-b border-rose-100">
             <div>
@@ -518,7 +822,7 @@ export const VietnameseGame: React.FC<VietnameseGameProps> = ({
       )}
 
       {/* GAME MODE 3: MISSING LETTER */}
-      {mode === 'missing_letter' && (
+      {category === 'foundation' && mode === 'missing_letter' && (
         <div className="bg-white rounded-3xl p-5 sm:p-7 border-2 border-rose-200 shadow-sm space-y-5">
           <div className="flex items-center justify-between pb-3 border-b border-rose-100">
             <span className="text-xs font-extrabold text-rose-600 bg-rose-100 px-2.5 py-1 rounded-full">
@@ -577,7 +881,7 @@ export const VietnameseGame: React.FC<VietnameseGameProps> = ({
       )}
 
       {/* GAME MODE 4: WORD & PICTURE MATCH */}
-      {mode === 'word_match' && (
+      {category === 'foundation' && mode === 'word_match' && (
         <div className="bg-white rounded-3xl p-5 sm:p-7 border-2 border-rose-200 shadow-sm space-y-5">
           <div className="flex items-center justify-between pb-3 border-b border-rose-100">
             <span className="text-xs font-extrabold text-rose-600 bg-rose-100 px-2.5 py-1 rounded-full">

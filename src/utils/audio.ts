@@ -71,6 +71,14 @@ export const soundFx = {
     }
   },
 
+  playCorrect(enabled = true) {
+    this.playSuccess(enabled);
+  },
+
+  playWrong(enabled = true) {
+    this.playError(enabled);
+  },
+
   playError(enabled = true) {
     if (!enabled) return;
     try {

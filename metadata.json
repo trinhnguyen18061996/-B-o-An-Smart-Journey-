@@ -1,6 +1,6 @@
 {
   "name": "Bảo An – Smart Journey",
-  "description": "Bảo An – Smart Journey: Ứng dụng học tập thông minh cho bé",
+  "description": "Bảo An – Smart Journey",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

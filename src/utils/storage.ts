@@ -83,6 +83,7 @@ const DEFAULT_SETTINGS: ParentSettings = {
   reminderEnabled: true,
   schedule: DEFAULT_SCHEDULE,
   schoolTimetable: DEFAULT_SCHOOL_TIMETABLE,
+  showWeekendTimetable: false,
 };
 
 export function loadInitialState(): AppState {
